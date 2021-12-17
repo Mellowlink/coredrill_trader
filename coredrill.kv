@@ -1,0 +1,155 @@
+<DashboardLayout>
+
+    amount_small:amount_small
+    amount_medium:amount_medium
+    amount_large:amount_large
+
+    long_btn:long_btn
+    short_btn:short_btn
+
+    pending_tx_size:pending_tx_size
+    pending_tx_margin:pending_tx_margin
+
+    execute_btn:execute_btn
+
+    pos_size:pos_size
+    entry_price:entry_price
+    liq_price:liq_price
+    pos_margin:pos_margin
+    pos_pnl:pos_pnl
+    close_pos_btn:close_pos_btn
+
+    GridLayout:
+        cols: 1
+        size: root.width, root.height
+
+        GridLayout:
+            cols: 3
+            row_force_default: True
+            row_default_height: 50
+
+            ToggleButton:
+                id: amount_small
+                text: "5%"
+                group: "tx_amount"
+                font_size: 16
+                on_press: root.change_tx_amount(self)
+            ToggleButton:
+                id: amount_medium
+                text: "10%"
+                group: "tx_amount"
+                font_size: 16
+                on_press: root.change_tx_amount(self)
+            ToggleButton:
+                id: amount_large
+                text: "15%"
+                group: "tx_amount"
+                font_size: 16
+                on_press: root.change_tx_amount(self)
+
+        GridLayout:
+            cols: 2
+            row_force_default: True
+            row_default_height: 50
+
+            ToggleButton:
+                id: long_btn
+                text: "Buy/Long"
+                group: "tx_direction"
+                font_size: 16
+                on_press: root.change_tx_direction(self)
+            ToggleButton:
+                id: short_btn
+                text: "Sell/Short"
+                group: "tx_direction"
+                font_size: 16
+                on_press: root.change_tx_direction(self)
+
+        GridLayout:
+            cols: 4
+            row_force_default: True
+            row_default_height: 30
+
+            Label:
+                text: ""
+            Label:
+                text: "Size"
+                font_size: 16
+            Label:
+                text: "Margin"
+                font_size: 16
+            Label:
+                text: ""
+            Label:
+                text: ""
+            Label:
+                id: pending_tx_size
+                text: "0.052 TEST"
+                font_size: 18
+            Label:
+                id: pending_tx_margin
+                text: "25.43 USDT"
+                font_size: 18
+            Label:
+                text: ""
+
+        GridLayout:
+            cols: 1
+
+            Button:
+                id: execute_btn
+                text: "Execute"
+                font_size: 16
+                on_release: root.execute_pressed()
+
+        GridLayout:
+            cols: 6
+            row_force_default: True
+            row_default_height: 30
+
+            Label:
+                text: "Size"
+                font_size: 14
+            Label:
+                text: "Entry Price"
+                font_size: 14
+            Label:
+                text: "Liq. Price"
+                font_size: 14
+            Label:
+                text: "Margin"
+                font_size: 14
+            Label:
+                text: "PNL(ROE %)"
+                font_size: 14
+            Label:
+                text: ""
+                font_size: 14
+
+            Label:
+                id: pos_size
+                text: "0.138 TEST"
+                font_size: 14
+            Label:
+                id: entry_price
+                text: "4,037.54"
+                font_size: 14
+            Label:
+                id: liq_price
+                text: "4,897.83"
+                font_size: 14
+            Label:
+                id: pos_margin
+                text: "56.01"
+                font_size: 14
+            Label:
+                id: pos_pnl
+                text: "-1.96(-2.98%)"
+                font_size: 14
+            Button:
+                id: close_pos_btn
+                text: "Close"
+                font_size: 14
+                on_release: root.close_position()
+
+</DashboardLayout>
