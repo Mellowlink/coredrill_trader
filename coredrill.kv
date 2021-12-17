@@ -1,3 +1,4 @@
+#:import utils kivy.utils
 <DashboardLayout>
 
     amount_small:amount_small
@@ -34,7 +35,7 @@
                 group: "tx_amount"
                 font_size: 16
                 background_normal: ''
-                background_color: (0.8078,0.6274,0.0549,1)
+                background_color: utils.get_color_from_hex('#f0b600')
                 on_press: root.change_tx_amount(self)
             ToggleButton:
                 id: amount_medium
@@ -42,7 +43,7 @@
                 group: "tx_amount"
                 font_size: 16
                 background_normal: ''
-                background_color: (0.8078,0.6274,0.0549,1)
+                background_color: utils.get_color_from_hex('#f0b600')
                 on_press: root.change_tx_amount(self)
             ToggleButton:
                 id: amount_large
@@ -50,7 +51,7 @@
                 group: "tx_amount"
                 font_size: 16
                 background_normal: ''
-                background_color: (0.8078,0.6274,0.0549,1)
+                background_color: utils.get_color_from_hex('#f0b600')
                 on_press: root.change_tx_amount(self)
 
         GridLayout:
@@ -64,7 +65,7 @@
                 group: "tx_direction"
                 font_size: 16
                 background_normal: ''
-                background_color: (0.0549,0.796,0.5058,1)
+                background_color: utils.get_color_from_hex('#0ecb81')
                 on_press: root.change_tx_direction(self)
             ToggleButton:
                 id: short_btn
@@ -72,7 +73,7 @@
                 group: "tx_direction"
                 font_size: 16
                 background_normal: ''
-                background_color: (0.9647,0.2745,0.3647,1)
+                background_color: utils.get_color_from_hex('#f6465d')
                 on_press: root.change_tx_direction(self)
 
         GridLayout:
@@ -85,11 +86,11 @@
             Label:
                 text: "Size"
                 font_size: 16
-                color: (0.6,0.6,0.6,1)
+                color: utils.get_color_from_hex('#999999')
             Label:
                 text: "Margin"
                 font_size: 16
-                color: (0.6,0.6,0.6,1)
+                color: utils.get_color_from_hex('#999999')
             Label:
                 text: ""
             Label:
@@ -122,23 +123,23 @@
             Label:
                 text: "Size"
                 font_size: 14
-                color: (0.6,0.6,0.6,1)
+                color: utils.get_color_from_hex('#999999')
             Label:
                 text: "Entry Price"
                 font_size: 14
-                color: (0.6,0.6,0.6,1)
+                color: utils.get_color_from_hex('#999999')
             Label:
                 text: "Liq. Price"
                 font_size: 14
-                color: (0.6,0.6,0.6,1)
+                color: utils.get_color_from_hex('#999999')
             Label:
                 text: "Margin"
                 font_size: 14
-                color: (0.6,0.6,0.6,1)
+                color: utils.get_color_from_hex('#999999')
             Label:
                 text: "PNL(ROE %)"
                 font_size: 14
-                color: (0.6,0.6,0.6,1)
+                color: utils.get_color_from_hex('#999999')
             Label:
                 text: ""
                 font_size: 14
@@ -146,7 +147,7 @@
             Label:
                 id: pos_size
                 text: "0.138 TEST"
-                color: (0.0549,0.796,0.5058,1)
+                color: utils.get_color_from_hex('#0ecb81')
                 font_size: 14
             Label:
                 id: entry_price
@@ -155,7 +156,7 @@
             Label:
                 id: liq_price
                 text: "4,897.83"
-                color: (0.8078,0.6274,0.0549,1)
+                color: utils.get_color_from_hex('#f0b600')
                 font_size: 14
             Label:
                 id: pos_margin
@@ -164,14 +165,14 @@
             Label:
                 id: pos_pnl
                 text: "-1.96(-2.98%)"
-                color: (0.9647,0.2745,0.3647,1)
+                color: utils.get_color_from_hex('#ca0c25')
                 font_size: 14
             Button:
                 id: close_pos_btn
                 text: "Close"
                 font_size: 14
                 background_normal: ''
-                background_color: (0.8078,0.6274,0.0549,1)
+                background_color: utils.get_color_from_hex('#f0b600')
                 on_release: root.close_position()
 
 </DashboardLayout>
