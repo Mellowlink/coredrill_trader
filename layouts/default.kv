@@ -1,6 +1,9 @@
 #:import utils kivy.utils
 <DashboardLayout>
 
+    asset_price:asset_price
+    margin_ratio:margin_ratio
+
     amount_small:amount_small
     amount_medium:amount_medium
     amount_large:amount_large
@@ -24,10 +27,67 @@
         cols: 1
         size: root.width, root.height
 
+        # main background color
+        canvas.before:
+            Color:
+                rgba: (utils.get_color_from_hex('#181A20'))
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        GridLayout:
+            cols: 2
+            #background color
+            canvas.before:
+                Color:
+                    rgba: (utils.get_color_from_hex('#1E2026'))
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            Label:
+                text: "ETH/USDT"
+                font_size: 18
+                size_hint_x: 0.65
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#181A20')
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+            Label:
+                text: "Margin Ratio"
+                font_size: 16
+                size_hint_x: 0.35
+            Label:
+                id: asset_price
+                text: "3,957.66"
+                font_size: 36
+                size_hint_x: 0.65
+                color: utils.get_color_from_hex('#0ecb81')
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#181A20')
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+            Label:
+                id: margin_ratio
+                text: "2.52%"
+                font_size: 24
+                size_hint_x: 0.35
+                color: utils.get_color_from_hex('#0ecb81')
+
         GridLayout:
             cols: 3
             row_force_default: True
             row_default_height: 50
+            #background color
+            canvas.before:
+                Color:
+                    rgba: (utils.get_color_from_hex('#1E2026'))
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
 
             ToggleButton:
                 id: amount_small
@@ -58,12 +118,20 @@
             cols: 2
             row_force_default: True
             row_default_height: 50
+            #background color
+            canvas.before:
+                Color:
+                    rgba: (utils.get_color_from_hex('#1E2026'))
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
 
             ToggleButton:
                 id: long_btn
                 text: "Buy/Long"
                 group: "tx_direction"
                 font_size: 16
+                size_hint_x: None
                 background_normal: ''
                 background_color: utils.get_color_from_hex('#0ecb81')
                 on_press: root.change_tx_direction(self)
@@ -72,6 +140,7 @@
                 text: "Sell/Short"
                 group: "tx_direction"
                 font_size: 16
+                size_hint_x: None
                 background_normal: ''
                 background_color: utils.get_color_from_hex('#f6465d')
                 on_press: root.change_tx_direction(self)
@@ -80,6 +149,13 @@
             cols: 4
             row_force_default: True
             row_default_height: 30
+            #background color
+            canvas.before:
+                Color:
+                    rgba: (utils.get_color_from_hex('#1E2026'))
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
 
             #TODO: Get rid of weird empty labels being used to balance the GridLayout
             Label:
@@ -109,18 +185,32 @@
 
         GridLayout:
             cols: 1
+            #background color
+            canvas.before:
+                Color:
+                    rgba: (utils.get_color_from_hex('#1E2026'))
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
 
             Button:
                 id: execute_btn
                 text: "Execute"
                 font_size: 16
+                #pos_hint: {'center_x': 0.5}
                 on_release: root.execute_pressed()
 
         GridLayout:
             cols: 6
             row_force_default: True
             row_default_height: 30
-
+            #background color
+            canvas.before:
+                Color:
+                    rgba: (utils.get_color_from_hex('#181A20'))
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
             Label:
                 text: "Size"
                 font_size: 14

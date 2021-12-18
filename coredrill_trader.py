@@ -1,9 +1,16 @@
 import kivy
 from kivy.app import App
+from kivy.lang import Builder
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
+from kivy.core.window import Window
+
+Builder.load_file('layouts/default.kv')
 
 class DashboardLayout(Widget):
+
+    asset_price = ObjectProperty(None)
+    margin_ratio = ObjectProperty(None)
 
     amount_small = ObjectProperty(None)
     amount_medium = ObjectProperty(None)
