@@ -27,20 +27,23 @@
         cols: 1
         size: root.width, root.height
 
+        # TODO: refactor GridLayouts with empty cols into appropriate Layout widgets
+
         # main background color
         canvas.before:
             Color:
-                rgba: (utils.get_color_from_hex('#181A20'))
+                rgba: utils.get_color_from_hex('#181A20')
             Rectangle:
                 pos: self.pos
                 size: self.size
 
         GridLayout:
             cols: 2
+
             #background color
             canvas.before:
                 Color:
-                    rgba: (utils.get_color_from_hex('#1E2026'))
+                    rgba: utils.get_color_from_hex('#1E2026')
                 Rectangle:
                     pos: self.pos
                     size: self.size
@@ -58,6 +61,16 @@
                 text: "Margin Ratio"
                 font_size: 16
                 size_hint_x: 0.35
+        GridLayout:
+            cols: 2
+
+            #background color
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex('#1E2026')
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
             Label:
                 id: asset_price
                 text: "3,957.66"
@@ -78,81 +91,161 @@
                 color: utils.get_color_from_hex('#0ecb81')
 
         GridLayout:
-            cols: 3
+            cols: 9
             row_force_default: True
             row_default_height: 50
+            # size_hint_y: None
+            # height: self.minimum_height
+
             #background color
             canvas.before:
                 Color:
-                    rgba: (utils.get_color_from_hex('#1E2026'))
+                    rgba: utils.get_color_from_hex('#1E2026')
                 Rectangle:
                     pos: self.pos
                     size: self.size
 
+            #TODO: Get rid of weird empty labels being used to balance the GridLayout
+            Label:
+                text: ""
+            Label:
+                text: ""
             ToggleButton:
                 id: amount_small
                 text: "5%"
                 group: "tx_amount"
-                font_size: 16
+                font_size: 28 if self.state == 'down' else 16
+                color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
                 background_normal: ''
-                background_color: utils.get_color_from_hex('#f0b600')
+                background_down: ''
+                background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#f0b600')
+                    Line:
+                        width: 0.5
+                        rectangle: self.x, self.y, self.width, self.height
                 on_press: root.change_tx_amount(self)
+            Label:
+                text: ""
             ToggleButton:
                 id: amount_medium
                 text: "10%"
                 group: "tx_amount"
-                font_size: 16
+                font_size: 28 if self.state == 'down' else 16
+                color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
                 background_normal: ''
-                background_color: utils.get_color_from_hex('#f0b600')
+                background_down: ''
+                background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#f0b600')
+                    Line:
+                        width: 0.5
+                        rectangle: self.x, self.y, self.width, self.height
                 on_press: root.change_tx_amount(self)
+            Label:
+                text: ""
             ToggleButton:
                 id: amount_large
                 text: "15%"
                 group: "tx_amount"
-                font_size: 16
+                font_size: 28 if self.state == 'down' else 16
+                color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
                 background_normal: ''
-                background_color: utils.get_color_from_hex('#f0b600')
+                background_down: ''
+                background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#f0b600')
+                    Line:
+                        width: 0.5
+                        rectangle: self.x, self.y, self.width, self.height
                 on_press: root.change_tx_amount(self)
-
+            Label:
+                text: ""
+            Label:
+                text: ""
         GridLayout:
-            cols: 2
+            cols: 7
             row_force_default: True
             row_default_height: 50
+            # size_hint_y: None
+            # height: self.minimum_height
             #background color
             canvas.before:
                 Color:
-                    rgba: (utils.get_color_from_hex('#1E2026'))
+                    rgba: utils.get_color_from_hex('#1E2026')
                 Rectangle:
                     pos: self.pos
                     size: self.size
 
+            #TODO: Get rid of weird empty labels being used to balance the GridLayout
+            Label:
+                text: ""
+            Label:
+                text: ""
             ToggleButton:
                 id: long_btn
                 text: "Buy/Long"
                 group: "tx_direction"
                 font_size: 16
-                size_hint_x: None
+                color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#0ecb81')
                 background_normal: ''
-                background_color: utils.get_color_from_hex('#0ecb81')
+                background_down: ''
+                background_color: utils.get_color_from_hex('#0ecb81') if self.state == 'down' else (0,0,0,0)
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#0ecb81')
+                    Line:
+                        width: 0.5
+                        rectangle: self.x, self.y, self.width, self.height
+                #     Color:
+                #         rgba: utils.get_color_from_hex('#0ecb81')
+                #     RoundedRectangle:
+                #         pos: self.pos
+                #         size: self.size
+                #         radius: [5]
                 on_press: root.change_tx_direction(self)
+            Label:
+                text: ""
             ToggleButton:
                 id: short_btn
                 text: "Sell/Short"
                 group: "tx_direction"
                 font_size: 16
-                size_hint_x: None
+                color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f6465d')
                 background_normal: ''
-                background_color: utils.get_color_from_hex('#f6465d')
+                background_down: ''
+                background_color: utils.get_color_from_hex('#f6465d') if self.state == 'down' else (0,0,0,0)
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#f6465d')
+                    Line:
+                        width: 0.5
+                        rectangle: self.x, self.y, self.width, self.height
+                #     Color:
+                #         rgba: utils.get_color_from_hex('#f6465d')
+                #     RoundedRectangle:
+                #         pos: self.pos
+                #         size: self.size
+                #         radius: [5]
                 on_press: root.change_tx_direction(self)
-
+            Label:
+                text: ""
+            Label:
+                text: ""
         GridLayout:
             cols: 4
             row_force_default: True
             row_default_height: 30
+            # size_hint_y: None
+            # height: self.minimum_height
+
             #background color
             canvas.before:
                 Color:
-                    rgba: (utils.get_color_from_hex('#1E2026'))
+                    rgba: utils.get_color_from_hex('#1E2026')
                 Rectangle:
                     pos: self.pos
                     size: self.size
@@ -184,30 +277,49 @@
                 text: ""
 
         GridLayout:
-            cols: 1
+            cols: 7
+            row_force_default: True
+            row_default_height: 50
+            # size_hint_y: None
+            # height: self.minimum_height
+
             #background color
             canvas.before:
                 Color:
-                    rgba: (utils.get_color_from_hex('#1E2026'))
+                    rgba: utils.get_color_from_hex('#1E2026')
                 Rectangle:
                     pos: self.pos
                     size: self.size
-
+            Label:
+                text: ""
+            Label:
+                text: ""
+            Label:
+                text: ""
             Button:
                 id: execute_btn
                 text: "Execute"
                 font_size: 16
                 #pos_hint: {'center_x': 0.5}
                 on_release: root.execute_pressed()
+            Label:
+                text: ""
+            Label:
+                text: ""
+            Label:
+                text: ""
 
         GridLayout:
             cols: 6
             row_force_default: True
             row_default_height: 30
+            # size_hint_y: None
+            # height: self.minimum_height
+
             #background color
             canvas.before:
                 Color:
-                    rgba: (utils.get_color_from_hex('#181A20'))
+                    rgba: utils.get_color_from_hex('#181A20')
                 Rectangle:
                     pos: self.pos
                     size: self.size
@@ -257,14 +369,22 @@
             Label:
                 id: pos_pnl
                 text: "-1.96(-2.98%)"
-                color: utils.get_color_from_hex('#ca0c25')
+                color: utils.get_color_from_hex('#d70c25')
                 font_size: 14
             Button:
                 id: close_pos_btn
                 text: "Close"
                 font_size: 14
+                color: utils.get_color_from_hex('#f0b600')
                 background_normal: ''
-                background_color: utils.get_color_from_hex('#f0b600')
+                background_down: ''
+                background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#f0b600')
+                    Line:
+                        width: 0.5
+                        rectangle: self.x, self.y, self.width, self.height
                 on_release: root.close_position()
 
 </DashboardLayout>
