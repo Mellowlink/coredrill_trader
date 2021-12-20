@@ -1,6 +1,8 @@
 #:import utils kivy.utils
 <DashboardLayout>
 
+    connection_switch:connection_switch
+
     balance_full:balance_full
     balance_available:balance_available
 
@@ -56,7 +58,12 @@
 
             #TODO: Get rid of weird empty labels being used to balance the GridLayout
             Label:
-                text: ""
+                text: "Connection"
+                text_size: self.size
+                halign: 'center'
+                valign: 'top'
+                font_size: 10
+                color: utils.get_color_from_hex('#999999')
             Label:
                 text: ""
             Label:
@@ -71,10 +78,10 @@
                 color: utils.get_color_from_hex('#999999')
             Label:
                 id: balance_full
-                text: "264.12 USDT"
+                text: "-"
                 font_size: 14
-            Label:
-                text: ""
+            Switch:
+                id: connection_switch
             Label:
                 text: ""
             Label:
@@ -89,7 +96,7 @@
                 color: utils.get_color_from_hex('#999999')
             Label:
                 id: balance_available
-                text: "213.56 USDT"
+                text: "-"
                 font_size: 14
                 color: utils.get_color_from_hex('#999999')
         GridLayout:
@@ -111,7 +118,7 @@
                 text: "ETH/USDT"
                 text_size: self.size
                 halign: 'center'
-                valign: 'top'
+                valign: 'center'
                 font_size: 18
                 size_hint_x: 0.65
                 canvas.before:
@@ -124,12 +131,12 @@
                 text: "Margin Ratio"
                 text_size: self.size
                 halign: 'center'
-                valign: 'top'
+                valign: 'center'
                 font_size: 16
                 size_hint_x: 0.35
             Label:
                 id: asset_price
-                text: "3,957.66"
+                text: "-"
                 text_size: self.size
                 halign: 'center'
                 valign: 'center'
@@ -144,7 +151,7 @@
                         size: self.size
             Label:
                 id: margin_ratio
-                text: "2.52%"
+                text: "-"
                 text_size: self.size
                 halign: 'center'
                 valign: 'center'
@@ -368,12 +375,12 @@
                 size_hint_x: 0.125
             Label:
                 id: pending_tx_size
-                text: "0.052 TEST"
+                text: "-"
                 font_size: 18 if self.width > 150 else 14
                 size_hint_x: 0.25
             Label:
                 id: pending_tx_margin
-                text: "25.43 USDT"
+                text: "-"
                 font_size: 18 if self.width > 150 else 14
                 size_hint_x: 0.25
             Label:
@@ -472,25 +479,25 @@
 
             Label:
                 id: pos_size
-                text: "0.138 TEST"
+                text: "-"
                 color: utils.get_color_from_hex('#0ecb81')
                 font_size: 14
             Label:
                 id: entry_price
-                text: "4,037.54"
+                text: "-"
                 font_size: 14
             Label:
                 id: liq_price
-                text: "4,897.83"
+                text: "-"
                 color: utils.get_color_from_hex('#f0b600')
                 font_size: 14
             Label:
                 id: pos_margin
-                text: "56.01"
+                text: "-"
                 font_size: 14
             Label:
                 id: pos_pnl
-                text: "-1.96(-2.98%)"
+                text: "-"
                 color: utils.get_color_from_hex('#d70c25')
                 font_size: 14
             Button:

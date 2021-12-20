@@ -4,6 +4,7 @@ from kivy.lang import Builder
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
 from kivy.core.window import Window
+# from kivy.utils import get_color_from_hex
 
 Builder.load_file('layouts/default.kv')
 
