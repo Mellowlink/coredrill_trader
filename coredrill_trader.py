@@ -9,6 +9,9 @@ Builder.load_file('layouts/default.kv')
 
 class DashboardLayout(Widget):
 
+    balance_full = ObjectProperty(None)
+    balance_available = ObjectProperty(None)
+
     asset_price = ObjectProperty(None)
     margin_ratio = ObjectProperty(None)
 
@@ -46,6 +49,7 @@ class DashboardLayout(Widget):
 
 class CoreDrill(App):
     def build(self):
+        Window.size = (1024, 600)
         return DashboardLayout()
 
 
