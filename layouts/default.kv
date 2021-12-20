@@ -189,6 +189,7 @@
                 background_normal: ''
                 background_down: ''
                 background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
+                always_release: True
                 canvas.before:
                     Color:
                         rgba: utils.get_color_from_hex('#f0b600')
@@ -196,6 +197,7 @@
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
                 on_press: root.change_tx_amount(self)
+                on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
             ToggleButton:
@@ -207,6 +209,7 @@
                 background_normal: ''
                 background_down: ''
                 background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
+                always_release: True
                 canvas.before:
                     Color:
                         rgba: utils.get_color_from_hex('#f0b600')
@@ -214,6 +217,7 @@
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
                 on_press: root.change_tx_amount(self)
+                on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
             ToggleButton:
@@ -225,6 +229,7 @@
                 background_normal: ''
                 background_down: ''
                 background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
+                always_release: True
                 canvas.before:
                     Color:
                         rgba: utils.get_color_from_hex('#f0b600')
@@ -232,6 +237,7 @@
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
                 on_press: root.change_tx_amount(self)
+                on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
             Label:
@@ -266,6 +272,7 @@
                 background_normal: ''
                 background_down: ''
                 background_color: utils.get_color_from_hex('#0ecb81') if self.state == 'down' else (0,0,0,0)
+                always_release: True
                 canvas.before:
                     Color:
                         rgba: utils.get_color_from_hex('#0ecb81')
@@ -279,6 +286,7 @@
                 #         size: self.size
                 #         radius: [5]
                 on_press: root.change_tx_direction(self)
+                on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
             ToggleButton:
@@ -290,6 +298,7 @@
                 background_normal: ''
                 background_down: ''
                 background_color: utils.get_color_from_hex('#f6465d') if self.state == 'down' else (0,0,0,0)
+                always_release: True
                 canvas.before:
                     Color:
                         rgba: utils.get_color_from_hex('#f6465d')
@@ -303,6 +312,7 @@
                 #         size: self.size
                 #         radius: [5]
                 on_press: root.change_tx_direction(self)
+                on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
             Label:
