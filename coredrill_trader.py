@@ -25,6 +25,8 @@ class DashboardLayout(Widget):
     pending_tx_size = ObjectProperty(None)
     pending_tx_margin = ObjectProperty(None)
 
+    clear_btn = ObjectProperty(None)
+
     execute_btn = ObjectProperty(None)
 
     pos_size = ObjectProperty(None)
@@ -39,6 +41,9 @@ class DashboardLayout(Widget):
 
     def change_tx_direction(self, instance):
         print(instance.text)
+
+    def clear_pressed(self):
+        print('Clear pressed')
 
     def execute_pressed(self):
         print('Execute pressed')

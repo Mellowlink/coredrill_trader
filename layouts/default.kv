@@ -17,6 +17,8 @@
     pending_tx_size:pending_tx_size
     pending_tx_margin:pending_tx_margin
 
+    clear_btn:clear_btn
+
     execute_btn:execute_btn
 
     pos_size:pos_size
@@ -320,7 +322,7 @@
             Label:
                 text: ""
         GridLayout:
-            cols: 4
+            cols: 6
             row_force_default: True
             row_default_height: 30
             padding: 20
@@ -338,28 +340,61 @@
             #TODO: Get rid of weird empty labels being used to balance the GridLayout
             Label:
                 text: ""
+                size_hint_x: 0.125
+            Label:
+                text: ""
+                size_hint_x: 0.125
             Label:
                 text: "Size"
-                font_size: 16
+                font_size: 16 if self.width > 150 else 12
+                size_hint_x: 0.25
                 color: utils.get_color_from_hex('#999999')
             Label:
                 text: "Margin"
-                font_size: 16
+                font_size: 16 if self.width > 150 else 12
+                size_hint_x: 0.25
                 color: utils.get_color_from_hex('#999999')
             Label:
                 text: ""
+                size_hint_x: 0.125
             Label:
                 text: ""
+                size_hint_x: 0.125
+            Label:
+                text: ""
+                size_hint_x: 0.125
+            Label:
+                text: ""
+                size_hint_x: 0.125
             Label:
                 id: pending_tx_size
                 text: "0.052 TEST"
-                font_size: 18
+                font_size: 18 if self.width > 150 else 14
+                size_hint_x: 0.25
             Label:
                 id: pending_tx_margin
                 text: "25.43 USDT"
-                font_size: 18
+                font_size: 18 if self.width > 150 else 14
+                size_hint_x: 0.25
             Label:
                 text: ""
+                size_hint_x: 0.125
+            Button:
+                id: clear_btn
+                text: "Clear"
+                font_size: 14
+                size_hint_x: 0.125
+                color: utils.get_color_from_hex('#ffffff')
+                background_normal: ''
+                background_down: ''
+                background_color: utils.get_color_from_hex('#4E4E4E') if self.state == 'down' else (0,0,0,0)
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#ffffff')
+                    Line:
+                        width: 0.5
+                        rectangle: self.x, self.y, self.width, self.height
+                on_release: root.clear_pressed()
 
         GridLayout:
             cols: 7
