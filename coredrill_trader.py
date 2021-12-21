@@ -1,6 +1,7 @@
 import kivy
-from kivy.app import App
+from kivymd.app import MDApp
 from kivy.lang import Builder
+from kivy.config import Config
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
 from kivy.core.window import Window
@@ -9,6 +10,8 @@ from kivy.core.window import Window
 Builder.load_file('layouts/default.kv')
 
 class DashboardLayout(Widget):
+
+    connection_switch = ObjectProperty(None)
 
     balance_full = ObjectProperty(None)
     balance_available = ObjectProperty(None)
@@ -45,6 +48,11 @@ class DashboardLayout(Widget):
 
     def clear_pressed(self):
         print('Clear pressed')
+        self.amount_small.state = "normal"
+        self.amount_medium.state = "normal"
+        self.amount_large.state = "normal"
+        self.long_btn.state = "normal"
+        self.short_btn.state = "normal"
 
     def execute_pressed(self):
         print('Execute pressed')
@@ -53,8 +61,9 @@ class DashboardLayout(Widget):
         print('Close position pressed')
 
 
-class CoreDrill(App):
+class CoreDrill(MDApp):
     def build(self):
+        Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Window.size = (1024, 600)
         return DashboardLayout()
 

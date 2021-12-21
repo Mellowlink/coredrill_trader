@@ -80,8 +80,16 @@
                 id: balance_full
                 text: "-"
                 font_size: 14
-            Switch:
-                id: connection_switch
+            FloatLayout:
+                MDSwitch:
+                    id: connection_switch
+                    size_hint: (None, 1)
+                    pos_hint: {'center_x': .475, 'center_y': .5}
+                    width: 50
+                    theme_thumb_color: 'Custom'
+                    theme_thumb_down_color: 'Custom'
+                    thumb_color: utils.get_color_from_hex('#f6465d')
+                    thumb_color_down: utils.get_color_from_hex('#0ecb81')
             Label:
                 text: ""
             Label:
@@ -452,6 +460,8 @@
                 Rectangle:
                     pos: self.pos
                     size: self.size
+                #border
+                #0B0E11
             Label:
                 text: "Size"
                 font_size: 14
@@ -502,15 +512,16 @@
                 font_size: 14
             Button:
                 id: close_pos_btn
-                text: "Close"
+                text: "Close" if self.disabled == False else ""
                 font_size: 14
                 color: utils.get_color_from_hex('#f0b600')
                 background_normal: ''
                 background_down: ''
                 background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#f0b600')
+                        rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
