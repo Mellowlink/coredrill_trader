@@ -58,7 +58,7 @@
 
             #TODO: Get rid of weird empty labels being used to balance the GridLayout
             Label:
-                text: "Connection"
+                text: "Connected" if root.connection_switch.active == True else "Connect"
                 text_size: self.size
                 halign: 'center'
                 valign: 'top'
@@ -88,7 +88,7 @@
                     width: 50
                     theme_thumb_color: 'Custom'
                     theme_thumb_down_color: 'Custom'
-                    thumb_color: utils.get_color_from_hex('#f6465d')
+                    thumb_color: utils.get_color_from_hex('#999999')
                     thumb_color_down: utils.get_color_from_hex('#0ecb81')
             Label:
                 text: ""
