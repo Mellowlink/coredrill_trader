@@ -44,7 +44,7 @@
                 pos: self.pos
                 size: self.size
         GridLayout:
-            cols: 6
+            cols: 7
             row_force_default: True
             row_default_height: 20
 
@@ -58,16 +58,18 @@
 
             #TODO: Get rid of weird empty labels being used to balance the GridLayout
             Label:
+                text: ""
+            Label:
+                text: ""
+            Label:
+                text: ""
+            Label:
                 text: "Connected" if root.connection_switch.active == True else "Connect"
                 text_size: self.size
                 halign: 'center'
                 valign: 'top'
                 font_size: 10
                 color: utils.get_color_from_hex('#999999')
-            Label:
-                text: ""
-            Label:
-                text: ""
             Label:
                 text: ""
             Label:
@@ -80,6 +82,13 @@
                 id: balance_full
                 text: "-"
                 font_size: 14
+
+            Label:
+                text: ""
+            Label:
+                text: ""
+            Label:
+                text: ""
             FloatLayout:
                 MDSwitch:
                     id: connection_switch
@@ -90,10 +99,6 @@
                     theme_thumb_down_color: 'Custom'
                     thumb_color: utils.get_color_from_hex('#999999')
                     thumb_color_down: utils.get_color_from_hex('#0ecb81')
-            Label:
-                text: ""
-            Label:
-                text: ""
             Label:
                 text: ""
             Label:
