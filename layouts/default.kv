@@ -102,6 +102,8 @@
                     theme_thumb_down_color: 'Custom'
                     thumb_color: utils.get_color_from_hex('#999999')
                     thumb_color_down: utils.get_color_from_hex('#0ecb81')
+                    on_release: root.connect_exchange(self)
+                    always_release: False
             Label:
                 text: ""
             Label:

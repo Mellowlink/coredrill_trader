@@ -50,6 +50,20 @@ class DashboardLayout(Widget):
         self.long_btn.state = "normal"
         self.short_btn.state = "normal"
 
+    def connect_exchange(self, instance):
+        #TODO: proper credential check and connection logic
+        has_credentials = False
+        
+        if not has_credentials:
+            instance.active = False
+            print(f'Initialise credentials here: {instance.active}')
+        elif has_credentials and instance.active:
+            print(f'OK to connect: {instance.active}')
+        else:
+            print(f'Connection off: {instance.active}')
+
+
+
     def change_tx_amount(self, instance):
         print(instance.text)
 
