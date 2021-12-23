@@ -8,8 +8,7 @@ from kivy.properties import ObjectProperty
 from kivy.core.window import Window
 
 config_path = './config'
-
-Builder.load_file('layouts/default.kv')
+layout_path = 'layouts/default.kv'
 
 class DashboardLayout(Widget):
 
@@ -49,18 +48,29 @@ class DashboardLayout(Widget):
         self.long_btn.state = "normal"
         self.short_btn.state = "normal"
 
+    def toggle_interface(self, state):
+        self.amount_small.disabled = not state
+        self.amount_medium.disabled = not state
+        self.amount_large.disabled = not state
+        self.long_btn.disabled = not state
+        self.short_btn.disabled = not state
+        self.clear_btn.disabled = not state
+        self.execute_btn.disabled = not state
+
+
     def connect_exchange(self, instance):
         #TODO: proper credential check and connection logic
-        has_credentials = False
+        has_credentials = True
 
         if not has_credentials:
             instance.active = False
             print(f'Initialise credentials here: {instance.active}')
         elif has_credentials and instance.active:
             print(f'OK to connect: {instance.active}')
+            self.toggle_interface(instance.active)
         else:
             print(f'Connection off: {instance.active}')
-
+            self.toggle_interface(instance.active)
 
 
     def change_tx_amount(self, instance):
@@ -94,4 +104,5 @@ class CoreDrill(MDApp):
 
 
 if __name__ == '__main__':
+    Builder.load_file(layout_path)
     CoreDrill().run()

@@ -106,7 +106,7 @@
                     theme_thumb_down_color: 'Custom'
                     thumb_color: utils.get_color_from_hex('#999999')
                     thumb_color_down: utils.get_color_from_hex('#0ecb81')
-                    on_release: root.connect_exchange(self)
+                    on_active: root.connect_exchange(self)
                     always_release: False
             Label:
                 text: ""
@@ -223,9 +223,10 @@
                 background_down: ''
                 background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
                 always_release: True
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#f0b600')
+                        rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
@@ -243,9 +244,10 @@
                 background_down: ''
                 background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
                 always_release: True
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#f0b600')
+                        rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
@@ -263,9 +265,10 @@
                 background_down: ''
                 background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
                 always_release: True
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#f0b600')
+                        rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
@@ -304,9 +307,10 @@
                 background_down: ''
                 background_color: utils.get_color_from_hex('#0ecb81') if self.state == 'down' else (0,0,0,0)
                 always_release: True
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#0ecb81')
+                        rgba: utils.get_color_from_hex('#0ecb81') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
@@ -324,9 +328,10 @@
                 background_down: ''
                 background_color: utils.get_color_from_hex('#f6465d') if self.state == 'down' else (0,0,0,0)
                 always_release: True
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#f6465d')
+                        rgba: utils.get_color_from_hex('#f6465d') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
@@ -401,9 +406,10 @@
                 background_normal: ''
                 background_down: ''
                 background_color: utils.get_color_from_hex('#4E4E4E') if self.state == 'down' else (0,0,0,0)
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#ffffff')
+                        rgba: utils.get_color_from_hex('#ffffff') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
@@ -432,6 +438,7 @@
                 id: execute_btn
                 text: "Execute"
                 font_size: 16
+                disabled: True
                 on_release: root.execute_pressed()
             Label:
                 text: ""
