@@ -1,5 +1,7 @@
 #:import utils kivy.utils
 <DashboardLayout>
+  #TODO: Add borders around sections: #0B0E11
+
 
     connection_switch:connection_switch
 
@@ -278,8 +280,6 @@
             row_force_default: True
             row_default_height: 50
             padding: 20
-            # size_hint_y: None
-            # height: self.minimum_height
 
             #background color
             canvas.before:
@@ -310,12 +310,6 @@
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                #     Color:
-                #         rgba: utils.get_color_from_hex('#0ecb81')
-                #     RoundedRectangle:
-                #         pos: self.pos
-                #         size: self.size
-                #         radius: [5]
                 on_press: root.change_tx_direction(self)
                 on_release: setattr(self, 'state', 'down')
             Label:
@@ -336,12 +330,6 @@
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                #     Color:
-                #         rgba: utils.get_color_from_hex('#f6465d')
-                #     RoundedRectangle:
-                #         pos: self.pos
-                #         size: self.size
-                #         radius: [5]
                 on_press: root.change_tx_direction(self)
                 on_release: setattr(self, 'state', 'down')
             Label:
@@ -353,8 +341,6 @@
             row_force_default: True
             row_default_height: 30
             padding: 20
-            # size_hint_y: None
-            # height: self.minimum_height
 
             #background color
             canvas.before:
@@ -428,8 +414,6 @@
             row_force_default: True
             row_default_height: 50
             padding: 20
-            # size_hint_y: None
-            # height: self.minimum_height
 
             #background color
             canvas.before:
@@ -448,7 +432,6 @@
                 id: execute_btn
                 text: "Execute"
                 font_size: 16
-                #pos_hint: {'center_x': 0.5}
                 on_release: root.execute_pressed()
             Label:
                 text: ""
@@ -461,8 +444,6 @@
             cols: 6
             row_force_default: True
             row_default_height: 30
-            # size_hint_y: None
-            # height: self.minimum_height
             padding: 10
 
             #background color
@@ -472,8 +453,6 @@
                 Rectangle:
                     pos: self.pos
                     size: self.size
-                #border
-                #0B0E11
             Label:
                 text: "Size"
                 font_size: 14

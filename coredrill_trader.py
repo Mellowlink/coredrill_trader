@@ -6,7 +6,6 @@ from kivy.config import Config
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
 from kivy.core.window import Window
-# from kivy.utils import get_color_from_hex
 
 config_path = './config'
 
@@ -53,7 +52,7 @@ class DashboardLayout(Widget):
     def connect_exchange(self, instance):
         #TODO: proper credential check and connection logic
         has_credentials = False
-        
+
         if not has_credentials:
             instance.active = False
             print(f'Initialise credentials here: {instance.active}')
