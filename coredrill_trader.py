@@ -1,5 +1,8 @@
 import os
 import kivy
+import ccxt.async_support as ccxt_async
+import asyncio
+import threading
 from kivymd.app import MDApp
 from kivy.lang import Builder
 from kivy.config import Config
