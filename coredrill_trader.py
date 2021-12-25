@@ -15,6 +15,7 @@ layout_path = 'layouts/default.kv'
 
 class DashboardLayout(Widget):
 
+    connection_status = ObjectProperty(None)
     connection_switch = ObjectProperty(None)
 
     balance_full = ObjectProperty(None)

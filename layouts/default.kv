@@ -2,7 +2,7 @@
 <DashboardLayout>
   #TODO: Add borders around sections: #0B0E11
 
-
+    connection_status:connection_status
     connection_switch:connection_switch
 
     balance_full:balance_full
@@ -66,6 +66,7 @@
             Label:
                 text: ""
             Label:
+                id: connection_status
                 text: "Connected" if root.connection_switch.active == True else "Connect"
                 text_size: self.size
                 halign: 'center'
