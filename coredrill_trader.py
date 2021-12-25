@@ -107,35 +107,52 @@ class CoreDrill(MDApp):
             self.exchange.fapiPublic_get_fundingrate()
         )
         if positions:
+            print('Position: \n') #test
+            print(positions[0]) #test
+            print('\n') #test
             position = {'size': float(positions[0]['positionAmt']),
                         'price': float(positions[0]['entryPrice']),
                         'liquidation_price': float(positions[0]['liquidationPrice']),
+                        'pos_pnl': float(positions[0]['unRealizedProfit']),
                         'leverage': float(positions[0]['leverage'])}
         else:
             position = {'size': 0.0,
                         'price': 0.0,
                         'liquidation_price': 0.0,
+                        'pos_pnl': 0.0,
                         'leverage': 1.0}
         for e in funding:
             if e['symbol'] == 'ETHUSDT':
+                print('Funding: \n') #test
+                print(e) #test
+                print('\n') #test
                 position['funding_time'] = float(e['fundingTime'])
                 position['predicted_funding_rate'] = float(e['fundingRate'])
                 break
         for e in account['assets']:
             if e['asset'] == 'USDT':
+                print('Account: \n') #test
+                print(e) #test
+                print('\n') #test
                 position['margin_cost'] = float(e['positionInitialMargin'])
+                position['margin_ratio'] = float(e['maintMargin']) / float(e['marginBalance'])
                 position['equity'] = float(e['marginBalance'])
                 position['wallet_balance'] = float(e['walletBalance'])
                 position['available_balance'] = float(e['availableBalance'])
                 break
-        print('Final position: ') #test
-        print(position)
+        print('Final position: \n') #test
+        print(position) #test
+        print('\n') #test
 
     def init_ccxt(self):
         self.exchange = getattr(ccxt_async, 'binance')({'apiKey': key,
                                             'secret': secret,
                                             'options': {'defaultType': 'future'}})
         asyncio.run(self.fetch_position())
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.event_loop_worker = None
 
     def build(self):
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
@@ -149,6 +166,46 @@ class CoreDrill(MDApp):
 
         return DashboardLayout()
 
+    def start_event_loop_thread(self):
+        if self.event_loop_worker is not None:
+            return
+        print("Running the asyncio EventLoop now...\n\n\n\n")
+        self.event_loop_worker = worker =  EventLoopWorker()
+        #TODO: create labels object here
+        #pulse_listener_label = self.root.ids.pulse_listener
+        pulse_listener_labels = {
+            "pos_size": self.root.ids.pos_size,
+            "entry_price": self.root.ids.entry_price,
+            "liq_price": self.root.ids.liq_price,
+            "pos_margin": self.root.ids.pos_margin,
+            "pos_pnl": self.root.ids.pos_pnl,
+            "balance_full": self.root.ids.balance_full,
+            "balance_available": self.root.ids.balance_available,
+            "asset_price": self.root.ids.asset_price,
+            "margin_ratio": self.root.ids.margin_ratio
+        }
+
+        def display_on_pulse(instance, text):
+            pulse_listener_labels["pos_size"].text = text
+            pulse_listener_labels["entry_price"].text = text
+            pulse_listener_labels["liq_price"].text = text
+            pulse_listener_labels["pos_margin"].text = text
+            pulse_listener_labels["pos_pnl"].text = text
+            pulse_listener_labels["balance_full"].text = text
+            pulse_listener_labels["balance_available"].text = text
+            pulse_listener_labels["asset_price"].text = text
+            pulse_listener_labels["margin_ratio"].text = text
+
+        # make the label react to the worker's `on_pulse` event:
+        worker.bind(on_pulse=display_on_pulse)
+        worker.start()
+
+    def submit_pulse_text(self, text):
+        worker = self.event_loop_worker
+        if worker is not None:
+            loop = self.event_loop_worker.loop
+            # use the thread safe variant to run it on the asyncio event loop:
+            loop.call_soon_threadsafe(worker.set_pulse_text, text)
 
 if __name__ == '__main__':
     Builder.load_file(layout_path)
