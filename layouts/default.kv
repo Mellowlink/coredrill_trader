@@ -67,7 +67,7 @@
                 text: ""
             Label:
                 id: connection_status
-                text: "Connected" if root.connection_switch.active == True else "Connect"
+                text: "Connect"
                 text_size: self.size
                 halign: 'center'
                 valign: 'top'
@@ -107,7 +107,7 @@
                     theme_thumb_down_color: 'Custom'
                     thumb_color: utils.get_color_from_hex('#999999')
                     thumb_color_down: utils.get_color_from_hex('#0ecb81')
-                    on_active: root.connect_exchange(self)
+                    on_active: app.connect_exchange(self)
                     always_release: False
             Label:
                 text: ""

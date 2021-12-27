@@ -3,9 +3,11 @@ import kivy
 import ccxt.async_support as ccxt_async
 import asyncio
 import threading
+from kivy.clock import mainthread
 from kivymd.app import MDApp
 from kivy.lang import Builder
 from kivy.config import Config
+from kivy.event import EventDispatcher
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
 from kivy.core.window import Window
@@ -52,34 +54,6 @@ class DashboardLayout(Widget):
         self.long_btn.state = "normal"
         self.short_btn.state = "normal"
 
-    def toggle_interface(self, state):
-        self.amount_small.disabled = not state
-        self.amount_medium.disabled = not state
-        self.amount_large.disabled = not state
-        self.long_btn.disabled = not state
-        self.short_btn.disabled = not state
-        self.clear_btn.disabled = not state
-        self.execute_btn.disabled = not state
-
-
-    def connect_exchange(self, instance):
-        #TODO: proper credential check and connection logic
-        has_credentials = True
-
-        if not has_credentials:
-            instance.active = False
-            print(f'Initialise credentials here: {instance.active}')
-        elif has_credentials and instance.active:
-            #try init exchange here
-            print(f'OK to connect: {instance.active}')
-            self.toggle_interface(instance.active)
-
-            #exception handling here
-        else:
-            print(f'Connection off: {instance.active}')
-            self.toggle_interface(instance.active)
-
-
     def change_tx_amount(self, instance):
         print(instance.text)
 
@@ -97,6 +71,29 @@ class DashboardLayout(Widget):
     def close_position(self):
         print('Close position pressed')
 
+
+class EventLoopWorker(EventDispatcher):
+    __events__ = ('on_pulse',)
+
+    def __init__(self):
+        super().__init__()
+        self._thread = threading.Thread(target=self._run_loop)  # note the Thread target here
+        self._thread.daemon = True
+        self.loop = None
+        # the following are for the pulse() coroutine, see below
+        self._default_pulse = ['tick!', 'tock!']
+        self._pulse = None
+        self._pulse_task = None
+
+    def _run_loop(self):
+        self.loop = asyncio.get_event_loop_policy().new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self._restart_pulse()
+        # add cleanup code for tearing down event loop here
+        self.loop.run_forever()
+
+    def start(self):
+        self._thread.start()
 
 class CoreDrill(MDApp):
 
@@ -140,6 +137,7 @@ class CoreDrill(MDApp):
                 position['wallet_balance'] = float(e['walletBalance'])
                 position['available_balance'] = float(e['availableBalance'])
                 break
+        position['asset_price'] = ""
         print('Final position: \n') #test
         print(position) #test
         print('\n') #test
@@ -148,7 +146,36 @@ class CoreDrill(MDApp):
         self.exchange = getattr(ccxt_async, 'binance')({'apiKey': key,
                                             'secret': secret,
                                             'options': {'defaultType': 'future'}})
-        asyncio.run(self.fetch_position())
+        #asyncio.run(self.fetch_position())
+
+    def toggle_interface(self, state):
+        self.root.ids.amount_small.disabled = not state
+        self.root.ids.amount_medium.disabled = not state
+        self.root.ids.amount_large.disabled = not state
+        self.root.ids.long_btn.disabled = not state
+        self.root.ids.short_btn.disabled = not state
+        self.root.ids.clear_btn.disabled = not state
+        self.root.ids.execute_btn.disabled = not state
+
+    def connect_exchange(self, instance):
+        #TODO: proper credential check and connection logic
+        has_credentials = True
+
+        if not has_credentials:
+            instance.active = False
+            print(f'Initialise credentials here: {instance.active}')
+        elif has_credentials and instance.active:
+            self.root.ids.connection_status.text = "Connecting..."
+            try:
+                self.init_ccxt()
+                self.toggle_interface(instance.active)
+                self.root.ids.connection_status.text = "Connected"
+            except Exception as e:
+                print('Error connecting to exchange', e)
+
+        else:
+            self.root.ids.connection_status.text = "Connect"
+            self.toggle_interface(instance.active)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -162,8 +189,6 @@ class CoreDrill(MDApp):
             os.makedirs(config_path)
             print("Created configuration folder.")
 
-        self.init_ccxt()
-
         return DashboardLayout()
 
     def start_event_loop_thread(self):
@@ -171,32 +196,23 @@ class CoreDrill(MDApp):
             return
         print("Running the asyncio EventLoop now...\n\n\n\n")
         self.event_loop_worker = worker =  EventLoopWorker()
-        #TODO: create labels object here
-        #pulse_listener_label = self.root.ids.pulse_listener
+
         pulse_listener_labels = {
-            "pos_size": self.root.ids.pos_size,
-            "entry_price": self.root.ids.entry_price,
-            "liq_price": self.root.ids.liq_price,
-            "pos_margin": self.root.ids.pos_margin,
+            "size": self.root.ids.pos_size,
+            "price": self.root.ids.entry_price,
+            "liquidation_price": self.root.ids.liq_price,
+            "margin_cost": self.root.ids.pos_margin,
             "pos_pnl": self.root.ids.pos_pnl,
-            "balance_full": self.root.ids.balance_full,
-            "balance_available": self.root.ids.balance_available,
+            "wallet_balance": self.root.ids.balance_full,
+            "available_balance": self.root.ids.balance_available,
             "asset_price": self.root.ids.asset_price,
             "margin_ratio": self.root.ids.margin_ratio
         }
 
-        def display_on_pulse(instance, text):
-            pulse_listener_labels["pos_size"].text = text
-            pulse_listener_labels["entry_price"].text = text
-            pulse_listener_labels["liq_price"].text = text
-            pulse_listener_labels["pos_margin"].text = text
-            pulse_listener_labels["pos_pnl"].text = text
-            pulse_listener_labels["balance_full"].text = text
-            pulse_listener_labels["balance_available"].text = text
-            pulse_listener_labels["asset_price"].text = text
-            pulse_listener_labels["margin_ratio"].text = text
+        def display_on_pulse(instance, position):
+            for key in pulse_listener_labels:
+                pulse_listener_labels[key].text = position[key]
 
-        # make the label react to the worker's `on_pulse` event:
         worker.bind(on_pulse=display_on_pulse)
         worker.start()
 
