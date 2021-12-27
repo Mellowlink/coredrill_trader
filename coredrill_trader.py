@@ -4,6 +4,7 @@ import ccxt.async_support as ccxt_async
 import asyncio
 import threading
 from kivy.clock import mainthread
+from kivy.utils import get_color_from_hex
 from kivymd.app import MDApp
 from kivy.lang import Builder
 from kivy.config import Config
@@ -47,13 +48,6 @@ class DashboardLayout(Widget):
     pos_pnl = ObjectProperty(None)
     close_pos_btn = ObjectProperty(None)
 
-    def reset_buttons(self):
-        self.amount_small.state = "normal"
-        self.amount_medium.state = "normal"
-        self.amount_large.state = "normal"
-        self.long_btn.state = "normal"
-        self.short_btn.state = "normal"
-
     def change_tx_amount(self, instance):
         print(instance.text)
 
@@ -62,10 +56,6 @@ class DashboardLayout(Widget):
 
     def clear_pressed(self):
         print('Clear pressed')
-        self.reset_buttons()
-
-    def execute_pressed(self):
-        print('Execute pressed')
         self.reset_buttons()
 
     def close_position(self):
@@ -104,12 +94,9 @@ class CoreDrill(MDApp):
             self.exchange.fapiPublic_get_fundingrate()
         )
         if positions:
-            print('Position: \n') #test
-            print(positions[0]) #test
-            print('\n') #test
             position = {'size': float(positions[0]['positionAmt']),
-                        'price': float(positions[0]['entryPrice']),
-                        'liquidation_price': float(positions[0]['liquidationPrice']),
+                        'price': f"{float(positions[0]['entryPrice']):.2f}",
+                        'liquidation_price': f"{float(positions[0]['liquidationPrice']):.2f}",
                         'pos_pnl': float(positions[0]['unRealizedProfit']),
                         'leverage': float(positions[0]['leverage'])}
         else:
@@ -120,33 +107,27 @@ class CoreDrill(MDApp):
                         'leverage': 1.0}
         for e in funding:
             if e['symbol'] == 'ETHUSDT':
-                print('Funding: \n') #test
-                print(e) #test
-                print('\n') #test
                 position['funding_time'] = float(e['fundingTime'])
                 position['predicted_funding_rate'] = float(e['fundingRate'])
                 break
         for e in account['assets']:
             if e['asset'] == 'USDT':
-                print('Account: \n') #test
-                print(e) #test
-                print('\n') #test
-                position['margin_cost'] = float(e['positionInitialMargin'])
-                position['margin_ratio'] = float(e['maintMargin']) / float(e['marginBalance'])
+                position['margin_cost'] = f"{float(e['positionInitialMargin']):.2f}"
+                position['margin_ratio'] = f"{(float(e['maintMargin']) / float(e['marginBalance']))*100:.2f}%"
                 position['equity'] = float(e['marginBalance'])
-                position['wallet_balance'] = float(e['walletBalance'])
-                position['available_balance'] = float(e['availableBalance'])
+                position['wallet_balance'] = f"{float(e['walletBalance']):.2f} USDT"
+                position['available_balance'] = f"{float(e['availableBalance']):.2f} USDT"
+                position['pos_pnl_pct'] = ((float(e['positionInitialMargin'])+float(position['pos_pnl']) - float(e['positionInitialMargin'])) / float(e['positionInitialMargin'])) * 100.0
                 break
         position['asset_price'] = ""
-        print('Final position: \n') #test
-        print(position) #test
-        print('\n') #test
+        self.pepe = position
+        return position
 
     def init_ccxt(self):
         self.exchange = getattr(ccxt_async, 'binance')({'apiKey': key,
                                             'secret': secret,
                                             'options': {'defaultType': 'future'}})
-        #asyncio.run(self.fetch_position())
+        asyncio.run(self.fetch_position())
 
     def toggle_interface(self, state):
         self.root.ids.amount_small.disabled = not state
@@ -157,6 +138,47 @@ class CoreDrill(MDApp):
         self.root.ids.clear_btn.disabled = not state
         self.root.ids.execute_btn.disabled = not state
 
+    def reset_buttons(self):
+        self.root.ids.amount_small.state = "normal"
+        self.root.ids.amount_medium.state = "normal"
+        self.root.ids.amount_large.state = "normal"
+        self.root.ids.long_btn.state = "normal"
+        self.root.ids.short_btn.state = "normal"
+
+    def execute_pressed(self):
+        print('Execute pressed')
+
+        pulse_listener_labels = {
+            "size": self.root.ids.pos_size,
+            "price": self.root.ids.entry_price,
+            "liquidation_price": self.root.ids.liq_price,
+            "margin_cost": self.root.ids.pos_margin,
+            "pos_pnl": self.root.ids.pos_pnl,
+            "wallet_balance": self.root.ids.balance_full,
+            "available_balance": self.root.ids.balance_available,
+            "asset_price": self.root.ids.asset_price,
+            "margin_ratio": self.root.ids.margin_ratio
+        }
+
+        for key in pulse_listener_labels:
+            colored_text = ["size", "pos_pnl"]
+            if key in colored_text:
+                if self.pepe[key] > 0:
+                    pulse_listener_labels[key].color = get_color_from_hex('#0ecb81')
+                elif self.pepe[key] < 0:
+                    pulse_listener_labels[key].color = get_color_from_hex('#d70c25')
+                else:
+                    pulse_listener_labels[key].color = get_color_from_hex('#ffffff')
+
+            if key == "size":
+                pulse_listener_labels[key].text = f"{self.pepe[key]:.3f} ETH"
+            elif key == "pos_pnl":
+                pulse_listener_labels[key].text = f"{self.pepe['pos_pnl']:.2f}({self.pepe['pos_pnl_pct']:.2f}%)"
+            else:
+                pulse_listener_labels[key].text = str(self.pepe[key])
+
+        self.reset_buttons()
+
     def connect_exchange(self, instance):
         #TODO: proper credential check and connection logic
         has_credentials = True
@@ -166,12 +188,12 @@ class CoreDrill(MDApp):
             print(f'Initialise credentials here: {instance.active}')
         elif has_credentials and instance.active:
             self.root.ids.connection_status.text = "Connecting..."
-            try:
-                self.init_ccxt()
-                self.toggle_interface(instance.active)
-                self.root.ids.connection_status.text = "Connected"
-            except Exception as e:
-                print('Error connecting to exchange', e)
+            #try:
+            self.init_ccxt()
+            self.toggle_interface(instance.active)
+            self.root.ids.connection_status.text = "Connected"
+            #except Exception as e:
+            #    print('Error connecting to exchange', e)
 
         else:
             self.root.ids.connection_status.text = "Connect"

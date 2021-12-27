@@ -84,6 +84,8 @@
             Label:
                 id: balance_full
                 text: "-"
+                text_size: self.size
+                halign: 'right'
                 font_size: 14
             Label:
                 text: ""
@@ -120,6 +122,8 @@
             Label:
                 id: balance_available
                 text: "-"
+                text_size: self.size
+                halign: 'right'
                 font_size: 14
                 color: utils.get_color_from_hex('#999999')
         GridLayout:
@@ -440,7 +444,7 @@
                 text: "Execute"
                 font_size: 16
                 disabled: True
-                on_release: root.execute_pressed()
+                on_release: app.execute_pressed()
             Label:
                 text: ""
             Label:
@@ -485,29 +489,21 @@
             Label:
                 text: ""
                 font_size: 14
-
             Label:
                 id: pos_size
-                text: "-"
-                color: utils.get_color_from_hex('#0ecb81')
                 font_size: 14
             Label:
                 id: entry_price
-                text: "-"
                 font_size: 14
             Label:
                 id: liq_price
-                text: "-"
                 color: utils.get_color_from_hex('#f0b600')
                 font_size: 14
             Label:
                 id: pos_margin
-                text: "-"
                 font_size: 14
             Label:
                 id: pos_pnl
-                text: "-"
-                color: utils.get_color_from_hex('#d70c25')
                 font_size: 14
             Button:
                 id: close_pos_btn
