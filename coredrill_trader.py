@@ -116,27 +116,19 @@ class CoreDrill(MDApp):
                 position['margin_ratio'] = f"{(float(e['maintMargin']) / float(e['marginBalance']))*100:.2f}%"
                 position['equity'] = float(e['marginBalance'])
                 position['wallet_balance'] = f"{float(e['walletBalance']):.2f} USDT"
-                position['available_balance'] = f"{float(e['availableBalance']):.2f} USDT"
+                position['available_balance'] = float(e['availableBalance'])
                 position['pos_pnl_pct'] = ((float(e['positionInitialMargin'])+float(position['pos_pnl']) - float(e['positionInitialMargin'])) / float(e['positionInitialMargin'])) * 100.0
                 break
         position['asset_price'] = ""
-        self.pepe = position
+        self.position = position
         return position
 
     def init_ccxt(self):
         self.exchange = getattr(ccxt_async, 'binance')({'apiKey': key,
                                             'secret': secret,
                                             'options': {'defaultType': 'future'}})
+        # test
         asyncio.run(self.fetch_position())
-
-    def toggle_interface(self, state):
-        self.root.ids.amount_small.disabled = not state
-        self.root.ids.amount_medium.disabled = not state
-        self.root.ids.amount_large.disabled = not state
-        self.root.ids.long_btn.disabled = not state
-        self.root.ids.short_btn.disabled = not state
-        self.root.ids.clear_btn.disabled = not state
-        self.root.ids.execute_btn.disabled = not state
 
     def reset_buttons(self):
         self.root.ids.amount_small.state = "normal"
@@ -145,37 +137,18 @@ class CoreDrill(MDApp):
         self.root.ids.long_btn.state = "normal"
         self.root.ids.short_btn.state = "normal"
 
+    def toggle_interface(self, state):
+        self.reset_buttons()
+        self.root.ids.amount_small.disabled = not state
+        self.root.ids.amount_medium.disabled = not state
+        self.root.ids.amount_large.disabled = not state
+        self.root.ids.long_btn.disabled = not state
+        self.root.ids.short_btn.disabled = not state
+        self.root.ids.clear_btn.disabled = not state
+        self.root.ids.execute_btn.disabled = not state
+
     def execute_pressed(self):
         print('Execute pressed')
-
-        pulse_listener_labels = {
-            "size": self.root.ids.pos_size,
-            "price": self.root.ids.entry_price,
-            "liquidation_price": self.root.ids.liq_price,
-            "margin_cost": self.root.ids.pos_margin,
-            "pos_pnl": self.root.ids.pos_pnl,
-            "wallet_balance": self.root.ids.balance_full,
-            "available_balance": self.root.ids.balance_available,
-            "asset_price": self.root.ids.asset_price,
-            "margin_ratio": self.root.ids.margin_ratio
-        }
-
-        for key in pulse_listener_labels:
-            colored_text = ["size", "pos_pnl"]
-            if key in colored_text:
-                if self.pepe[key] > 0:
-                    pulse_listener_labels[key].color = get_color_from_hex('#0ecb81')
-                elif self.pepe[key] < 0:
-                    pulse_listener_labels[key].color = get_color_from_hex('#d70c25')
-                else:
-                    pulse_listener_labels[key].color = get_color_from_hex('#ffffff')
-
-            if key == "size":
-                pulse_listener_labels[key].text = f"{self.pepe[key]:.3f} ETH"
-            elif key == "pos_pnl":
-                pulse_listener_labels[key].text = f"{self.pepe['pos_pnl']:.2f}({self.pepe['pos_pnl_pct']:.2f}%)"
-            else:
-                pulse_listener_labels[key].text = str(self.pepe[key])
 
         self.reset_buttons()
 
@@ -233,7 +206,25 @@ class CoreDrill(MDApp):
 
         def display_on_pulse(instance, position):
             for key in pulse_listener_labels:
-                pulse_listener_labels[key].text = position[key]
+                #TODO: think of a better way to check expected text color
+                colored_text = ["size", "pos_pnl"]
+                if key in colored_text:
+                    if position[key] > 0:
+                        pulse_listener_labels[key].color = get_color_from_hex('#0ecb81')
+                    elif position[key] < 0:
+                        pulse_listener_labels[key].color = get_color_from_hex('#d70c25')
+                    else:
+                        pulse_listener_labels[key].color = get_color_from_hex('#ffffff')
+
+                #TODO: do something better than checking these string literals
+                if key == "size":
+                    pulse_listener_labels[key].text = f"{position[key]:.3f} ETH"
+                elif key == "pos_pnl":
+                    pulse_listener_labels[key].text = f"{position[key]:.2f}({position['pos_pnl_pct']:.2f}%)"
+                elif key == "available_balance":
+                    pulse_listener_labels[key].text = f"{float(position[key]):.2f} USDT"
+                else:
+                    pulse_listener_labels[key].text = str(position[key])
 
         worker.bind(on_pulse=display_on_pulse)
         worker.start()
