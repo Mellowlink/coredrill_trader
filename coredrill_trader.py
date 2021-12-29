@@ -54,10 +54,6 @@ class DashboardLayout(Widget):
     def change_tx_direction(self, instance):
         print(instance.text)
 
-    def clear_pressed(self):
-        print('Clear pressed')
-        self.reset_buttons()
-
     def close_position(self):
         print('Close position pressed')
 
@@ -71,7 +67,7 @@ class EventLoopWorker(EventDispatcher):
         self._thread.daemon = True
         self.loop = None
         # the following are for the pulse() coroutine, see below
-        self._default_pulse = ['tick!', 'tock!']
+        self._default_pulse = [None]
         self._pulse = None
         self._pulse_task = None
 
@@ -85,13 +81,62 @@ class EventLoopWorker(EventDispatcher):
     def start(self):
         self._thread.start()
 
+    #START: In Progress
+    async def pulse(self):
+        """Core coroutine of this asyncio event loop.
+        Repeats a pulse message in a short interval on three channels:
+        - using `print()`
+        - by dispatching a Kivy event `on_pulse` with the help of `@mainthread`
+        - on the Kivy thread through `kivy_update_status()` with the help of
+          `@mainthread`
+        The decorator `@mainthread` is a convenience wrapper around
+        `Clock.schedule_once()` which ensures the callables run on the Kivy
+        thread.
+        """
+        for msg in self._pulse_messages():
+            # `EventLoopWorker` is an `EventDispatcher` to which others can
+            # subscribe. See `display_on_pulse()` in `start_event_loop_thread()`
+            # on how it is bound to the `on_pulse` event.  The indirection
+            # through the `notify()` function is necessary to apply the
+            # `@mainthread` decorator (left label):
+            @mainthread
+            def notify(msg):
+                self.dispatch('on_pulse', msg)
+
+            notify(msg)
+
+            await asyncio.sleep(1)
+
+    def _restart_pulse(self):
+        """Helper to start/reset the pulse task when the pulse changes."""
+        if self._pulse_task is not None:
+            self._pulse_task.cancel()
+        self._pulse_task = self.loop.create_task(self.pulse())
+
+    def on_pulse(self, *_):
+        pass
+
+    async def on_fetch(self, *_):
+        pass
+
+    def _pulse_messages(self):
+        """A generator providing an inexhaustible supply of pulse messages."""
+        while True:
+            if isinstance(self._pulse, str) and self._pulse != '':
+                pulse = self._pulse.split()
+                yield from pulse
+            else:
+                yield from self._default_pulse
+
+    #END: In Progress
+
 class CoreDrill(MDApp):
 
     async def fetch_position(self) -> dict:
         positions, account, funding = await asyncio.gather(
-            self.exchange.fapiPrivate_get_positionrisk(params={'symbol': 'ETHUSDT'}),
-            self.exchange.fapiPrivate_get_account(),
-            self.exchange.fapiPublic_get_fundingrate()
+            exchange.fapiPrivate_get_positionrisk(params={'symbol': 'ETHUSDT'}),
+            exchange.fapiPrivate_get_account(),
+            exchange.fapiPublic_get_fundingrate()
         )
         if positions:
             position = {'size': float(positions[0]['positionAmt']),
@@ -124,11 +169,11 @@ class CoreDrill(MDApp):
         return position
 
     def init_ccxt(self):
-        self.exchange = getattr(ccxt_async, 'binance')({'apiKey': key,
+        #TODO: global variable lol? i can probably think of a better way to persist this object between classes
+        global exchange
+        exchange = getattr(ccxt_async, 'binance')({'apiKey': key,
                                             'secret': secret,
                                             'options': {'defaultType': 'future'}})
-        # test
-        asyncio.run(self.fetch_position())
 
     def reset_buttons(self):
         self.root.ids.amount_small.state = "normal"
@@ -147,30 +192,13 @@ class CoreDrill(MDApp):
         self.root.ids.clear_btn.disabled = not state
         self.root.ids.execute_btn.disabled = not state
 
-    def execute_pressed(self):
-        print('Execute pressed')
-
+    def clear_pressed(self):
+        print('Clear pressed')
         self.reset_buttons()
 
-    def connect_exchange(self, instance):
-        #TODO: proper credential check and connection logic
-        has_credentials = True
-
-        if not has_credentials:
-            instance.active = False
-            print(f'Initialise credentials here: {instance.active}')
-        elif has_credentials and instance.active:
-            self.root.ids.connection_status.text = "Connecting..."
-            #try:
-            self.init_ccxt()
-            self.toggle_interface(instance.active)
-            self.root.ids.connection_status.text = "Connected"
-            #except Exception as e:
-            #    print('Error connecting to exchange', e)
-
-        else:
-            self.root.ids.connection_status.text = "Connect"
-            self.toggle_interface(instance.active)
+    def execute_pressed(self):
+        print('Execute pressed')
+        self.reset_buttons()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -205,6 +233,15 @@ class CoreDrill(MDApp):
         }
 
         def display_on_pulse(instance, position):
+            print(f'Exchange: {exchange}')
+            if exchange is None:
+                print('No exchange connected.')
+                return
+            print(f'Position: {position}')
+            if position is None:
+                print('No position info detected.')
+                return
+
             for key in pulse_listener_labels:
                 #TODO: think of a better way to check expected text color
                 colored_text = ["size", "pos_pnl"]
@@ -229,12 +266,27 @@ class CoreDrill(MDApp):
         worker.bind(on_pulse=display_on_pulse)
         worker.start()
 
-    def submit_pulse_text(self, text):
-        worker = self.event_loop_worker
-        if worker is not None:
-            loop = self.event_loop_worker.loop
-            # use the thread safe variant to run it on the asyncio event loop:
-            loop.call_soon_threadsafe(worker.set_pulse_text, text)
+    def connect_exchange(self, instance):
+        #TODO: proper credential check and connection logic
+        has_credentials = True
+
+        if not has_credentials:
+            instance.active = False
+            print(f'Initialise credentials here: {instance.active}')
+        elif has_credentials and instance.active:
+            self.root.ids.connection_status.text = "Connecting..."
+            try:
+                self.init_ccxt()
+                self.toggle_interface(instance.active)
+                self.root.ids.connection_status.text = "Connected"
+                self.start_event_loop_thread()
+            except Exception as e:
+                print('Error connecting to exchange', e)
+
+        else:
+            exchange = None
+            self.root.ids.connection_status.text = "Connect"
+            self.toggle_interface(instance.active)
 
 if __name__ == '__main__':
     Builder.load_file(layout_path)
