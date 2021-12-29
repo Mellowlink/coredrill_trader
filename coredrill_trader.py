@@ -63,7 +63,7 @@ class EventLoopWorker(EventDispatcher):
 
     def __init__(self):
         super().__init__()
-        self._thread = threading.Thread(target=self._run_loop)  # note the Thread target here
+        self._thread = threading.Thread(target=self._run_loop)
         self._thread.daemon = True
         self.loop = None
         # the following are for the pulse() coroutine, see below
@@ -75,63 +75,16 @@ class EventLoopWorker(EventDispatcher):
         self.loop = asyncio.get_event_loop_policy().new_event_loop()
         asyncio.set_event_loop(self.loop)
         self._restart_pulse()
-        # add cleanup code for tearing down event loop here
+
         self.loop.run_forever()
 
     def start(self):
         self._thread.start()
 
+    def stop(self):
+        self.loop.stop()
+
     #START: In Progress
-    async def pulse(self):
-        """Core coroutine of this asyncio event loop.
-        Repeats a pulse message in a short interval on three channels:
-        - using `print()`
-        - by dispatching a Kivy event `on_pulse` with the help of `@mainthread`
-        - on the Kivy thread through `kivy_update_status()` with the help of
-          `@mainthread`
-        The decorator `@mainthread` is a convenience wrapper around
-        `Clock.schedule_once()` which ensures the callables run on the Kivy
-        thread.
-        """
-        for msg in self._pulse_messages():
-            # `EventLoopWorker` is an `EventDispatcher` to which others can
-            # subscribe. See `display_on_pulse()` in `start_event_loop_thread()`
-            # on how it is bound to the `on_pulse` event.  The indirection
-            # through the `notify()` function is necessary to apply the
-            # `@mainthread` decorator (left label):
-            @mainthread
-            def notify(msg):
-                self.dispatch('on_pulse', msg)
-
-            notify(msg)
-
-            await asyncio.sleep(1)
-
-    def _restart_pulse(self):
-        """Helper to start/reset the pulse task when the pulse changes."""
-        if self._pulse_task is not None:
-            self._pulse_task.cancel()
-        self._pulse_task = self.loop.create_task(self.pulse())
-
-    def on_pulse(self, *_):
-        pass
-
-    async def on_fetch(self, *_):
-        pass
-
-    def _pulse_messages(self):
-        """A generator providing an inexhaustible supply of pulse messages."""
-        while True:
-            if isinstance(self._pulse, str) and self._pulse != '':
-                pulse = self._pulse.split()
-                yield from pulse
-            else:
-                yield from self._default_pulse
-
-    #END: In Progress
-
-class CoreDrill(MDApp):
-
     async def fetch_position(self) -> dict:
         positions, account, funding = await asyncio.gather(
             exchange.fapiPrivate_get_positionrisk(params={'symbol': 'ETHUSDT'}),
@@ -165,8 +118,41 @@ class CoreDrill(MDApp):
                 position['pos_pnl_pct'] = ((float(e['positionInitialMargin'])+float(position['pos_pnl']) - float(e['positionInitialMargin'])) / float(e['positionInitialMargin'])) * 100.0
                 break
         position['asset_price'] = ""
-        self.position = position
         return position
+
+    async def pulse(self):
+
+        for msg in self._pulse_messages():
+            @mainthread
+            def dispatch_position(position):
+                self.dispatch('on_pulse', position)
+
+            position = await self.fetch_position()
+            dispatch_position(position)
+
+            await asyncio.sleep(0.5)
+
+    def _restart_pulse(self):
+        """Helper to start/reset the pulse task when the pulse changes."""
+        if self._pulse_task is not None:
+            self._pulse_task.cancel()
+        self._pulse_task = self.loop.create_task(self.pulse())
+
+    def on_pulse(self, *_):
+        pass
+
+    def _pulse_messages(self):
+        """A generator providing an inexhaustible supply of pulse messages."""
+        while True:
+            if isinstance(self._pulse, str) and self._pulse != '':
+                pulse = self._pulse.split()
+                yield from pulse
+            else:
+                yield from self._default_pulse
+
+    #END: In Progress
+
+class CoreDrill(MDApp):
 
     def init_ccxt(self):
         #TODO: global variable lol? i can probably think of a better way to persist this object between classes
@@ -198,6 +184,7 @@ class CoreDrill(MDApp):
 
     def execute_pressed(self):
         print('Execute pressed')
+        print(self.position)
         self.reset_buttons()
 
     def __init__(self, **kwargs):
@@ -233,11 +220,10 @@ class CoreDrill(MDApp):
         }
 
         def display_on_pulse(instance, position):
-            print(f'Exchange: {exchange}')
+            self.position = position
             if exchange is None:
                 print('No exchange connected.')
                 return
-            print(f'Position: {position}')
             if position is None:
                 print('No position info detected.')
                 return
@@ -285,6 +271,8 @@ class CoreDrill(MDApp):
 
         else:
             exchange = None
+            self.event_loop_worker.stop()
+            self.event_loop_worker = None
             self.root.ids.connection_status.text = "Connect"
             self.toggle_interface(instance.active)
 
