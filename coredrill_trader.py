@@ -48,12 +48,6 @@ class DashboardLayout(Widget):
     pos_pnl = ObjectProperty(None)
     close_pos_btn = ObjectProperty(None)
 
-    def change_tx_amount(self, instance):
-        print(instance.text)
-
-    def change_tx_direction(self, instance):
-        print(instance.text)
-
     def close_position(self):
         print('Close position pressed')
 
@@ -86,12 +80,16 @@ class EventLoopWorker(EventDispatcher):
 
     #START: In Progress
     async def fetch_position(self) -> dict:
-        positions, account, funding = await asyncio.gather(
+        positions, account, funding, symbol = await asyncio.gather(
             exchange.fapiPrivate_get_positionrisk(params={'symbol': 'ETHUSDT'}),
             exchange.fapiPrivate_get_account(),
-            exchange.fapiPublic_get_fundingrate()
+            exchange.fapiPublic_get_fundingrate(),
+            exchange.fapiPublic_get_ticker_price(params={'symbol': 'ETHUSDT'})
         )
         if positions:
+            print('\nPosition\n---\n')
+            for key in positions[0]:
+                print(f"{key}: {positions[0][key]}")
             position = {'size': float(positions[0]['positionAmt']),
                         'price': f"{float(positions[0]['entryPrice']):.2f}",
                         'liquidation_price': f"{float(positions[0]['liquidationPrice']):.2f}",
@@ -102,14 +100,20 @@ class EventLoopWorker(EventDispatcher):
                         'price': 0.0,
                         'liquidation_price': 0.0,
                         'pos_pnl': 0.0,
-                        'leverage': 1.0}
+                        'leverage': 10.0}
         for e in funding:
             if e['symbol'] == 'ETHUSDT':
+                print('\nFunding\n---\n')
+                for key in e:
+                    print(f"{key}: {e[key]}")
                 position['funding_time'] = float(e['fundingTime'])
                 position['predicted_funding_rate'] = float(e['fundingRate'])
                 break
         for e in account['assets']:
             if e['asset'] == 'USDT':
+                print('\nAsset\n---\n')
+                for key in e:
+                    print(f"{key}: {e[key]}")
                 position['margin_cost'] = f"{float(e['positionInitialMargin']):.2f}"
                 position['margin_ratio'] = f"{(float(e['maintMargin']) / float(e['marginBalance']))*100:.2f}%"
                 position['equity'] = float(e['marginBalance'])
@@ -117,7 +121,12 @@ class EventLoopWorker(EventDispatcher):
                 position['available_balance'] = float(e['availableBalance'])
                 position['pos_pnl_pct'] = ((float(e['positionInitialMargin'])+float(position['pos_pnl']) - float(e['positionInitialMargin'])) / float(e['positionInitialMargin'])) * 100.0
                 break
-        position['asset_price'] = ""
+        print('\nSymbol\n---\n')
+        for s in symbol:
+            print(f"{s}: {symbol[s]}")
+        for key in position:
+            print(f"Key: {key}")
+        position['asset_price'] = symbol['price']
         return position
 
     async def pulse(self):
@@ -160,6 +169,15 @@ class CoreDrill(MDApp):
         exchange = getattr(ccxt_async, 'binance')({'apiKey': key,
                                             'secret': secret,
                                             'options': {'defaultType': 'future'}})
+        global last_price
+        last_price = None
+
+    def clear_position_labels(self):
+        self.root.ids.pos_size.text = ""
+        self.root.ids.entry_price.text = ""
+        self.root.ids.liq_price.text = ""
+        self.root.ids.pos_margin.text = ""
+        self.root.ids.pos_pnl.text = ""
 
     def reset_buttons(self):
         self.root.ids.amount_small.state = "normal"
@@ -167,6 +185,10 @@ class CoreDrill(MDApp):
         self.root.ids.amount_large.state = "normal"
         self.root.ids.long_btn.state = "normal"
         self.root.ids.short_btn.state = "normal"
+        self.root.ids.pending_tx_size.text = "-"
+        self.root.ids.pending_tx_margin.text = "-"
+
+        self.pending_tx = {"percent": 0, "size": 0, "margin": 0, "direction": 0}
 
     def toggle_interface(self, state):
         self.reset_buttons()
@@ -178,18 +200,41 @@ class CoreDrill(MDApp):
         self.root.ids.clear_btn.disabled = not state
         self.root.ids.execute_btn.disabled = not state
 
+    def calculate_pending_tx(self):
+        self.pending_tx['margin'] = float(self.position['available_balance']) * self.pending_tx['percent']
+        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 10.0, 3) #TODO: 10x leverage, change this to be pulled from config in the future
+        self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
+        self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
+
+    def change_tx_amount(self, instance, percent):
+        if self.position is not None:
+            self.pending_tx['percent'] = percent
+            if self.pending_tx['percent'] > 0 and self.pending_tx['direction'] != 0:
+                self.calculate_pending_tx()
+            else:
+                setattr(instance, 'state', 'normal')
+
+    def change_tx_direction(self, instance, multiplier):
+        if self.position is not None:
+            self.pending_tx['direction'] = multiplier
+            if self.pending_tx['percent'] > 0 and self.pending_tx['direction'] != 0:
+                self.calculate_pending_tx()
+        else:
+            setattr(instance, 'state', 'normal')
+
     def clear_pressed(self):
         print('Clear pressed')
         self.reset_buttons()
 
     def execute_pressed(self):
         print('Execute pressed')
-        print(self.position)
         self.reset_buttons()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.event_loop_worker = None
+        self.position = None
+        self.pending_tx = {"percent": 0, "size": 0, "margin": 0, "direction": 0}
 
     def build(self):
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
@@ -227,27 +272,49 @@ class CoreDrill(MDApp):
             if position is None:
                 print('No position info detected.')
                 return
+            if position["size"] != 0:
+                if position["size"] > 0:
+                    self.root.ids.short_btn.disabled = True
+                elif position["size"] < 0:
+                    self.root.ids.long_btn.disabled = True
 
-            for key in pulse_listener_labels:
-                #TODO: think of a better way to check expected text color
-                colored_text = ["size", "pos_pnl"]
-                if key in colored_text:
-                    if position[key] > 0:
-                        pulse_listener_labels[key].color = get_color_from_hex('#0ecb81')
-                    elif position[key] < 0:
-                        pulse_listener_labels[key].color = get_color_from_hex('#d70c25')
+                self.root.ids.close_pos_btn.disabled = False
+                for key in pulse_listener_labels:
+                    #TODO: think of a better way to check expected text color
+                    colored_text = ["size", "pos_pnl"]
+                    if key in colored_text:
+                        if position[key] > 0:
+                            pulse_listener_labels[key].color = get_color_from_hex('#0ecb81')
+                        elif position[key] < 0:
+                            pulse_listener_labels[key].color = get_color_from_hex('#f6465d')
+                        else:
+                            pulse_listener_labels[key].color = get_color_from_hex('#ffffff')
+
+                    #TODO: do something better than checking these string literals
+                    if key == "size":
+                        pulse_listener_labels[key].text = f"{position[key]:.3f} ETH"
+                    elif key == "pos_pnl":
+                        pulse_listener_labels[key].text = f"{position[key]:.2f}({position['pos_pnl_pct']:.2f}%)"
+                    elif key == "available_balance":
+                        pulse_listener_labels[key].text = f"{float(position[key]):.2f} USDT"
+                    elif key == "asset_price":
+                        global last_price
+                        pulse_listener_labels[key].text = f"{float(position[key]):.2f}"
+                        if last_price is not None:
+                            if float(last_price) > float(position[key]):
+                                pulse_listener_labels[key].color = get_color_from_hex('#f6465d')
+                            elif float(last_price) < float(position[key]):
+                                pulse_listener_labels[key].color = get_color_from_hex('#0ecb81')
+                            else:
+                                pulse_listener_labels[key].color = get_color_from_hex('#ffffff')
+                        last_price = position[key]
                     else:
-                        pulse_listener_labels[key].color = get_color_from_hex('#ffffff')
-
-                #TODO: do something better than checking these string literals
-                if key == "size":
-                    pulse_listener_labels[key].text = f"{position[key]:.3f} ETH"
-                elif key == "pos_pnl":
-                    pulse_listener_labels[key].text = f"{position[key]:.2f}({position['pos_pnl_pct']:.2f}%)"
-                elif key == "available_balance":
-                    pulse_listener_labels[key].text = f"{float(position[key]):.2f} USDT"
-                else:
-                    pulse_listener_labels[key].text = str(position[key])
+                        pulse_listener_labels[key].text = str(position[key])
+            else:
+                self.clear_position_labels()
+                self.root.ids.short_btn.disabled = False
+                self.root.ids.long_btn.disabled = False
+                self.root.ids.close_pos_btn.disabled = True
 
         worker.bind(on_pulse=display_on_pulse)
         worker.start()
@@ -258,7 +325,7 @@ class CoreDrill(MDApp):
 
         if not has_credentials:
             instance.active = False
-            print(f'Initialise credentials here: {instance.active}')
+            print(f"Initialise credentials here: {instance.active}")
         elif has_credentials and instance.active:
             self.root.ids.connection_status.text = "Connecting..."
             try:
@@ -274,6 +341,13 @@ class CoreDrill(MDApp):
             self.event_loop_worker.stop()
             self.event_loop_worker = None
             self.root.ids.connection_status.text = "Connect"
+            self.root.ids.balance_full.text = "-"
+            self.root.ids.balance_available.text = "-"
+            self.root.ids.asset_price.text = "-"
+            self.root.ids.asset_price.color = get_color_from_hex('#ffffff')
+            self.root.ids.margin_ratio.text = "-"
+            self.clear_position_labels()
+            self.root.ids.close_pos_btn.disabled = True
             self.toggle_interface(instance.active)
 
 if __name__ == '__main__':
