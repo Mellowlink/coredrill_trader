@@ -1,4 +1,5 @@
 #:import utils kivy.utils
+<InfoIcon@MDIcon+MDTooltip>
 <DashboardLayout>
   #TODO: Add borders around sections: #0B0E11
 
@@ -17,6 +18,8 @@
 
     long_btn:long_btn
     short_btn:short_btn
+
+    safety_helper_icon:safety_helper_icon
 
     pending_tx_size:pending_tx_size
     pending_tx_margin:pending_tx_margin
@@ -94,7 +97,7 @@
             #         icon: "menu"
             #         pos_hint: {"center_x": 0.3, "center_y": 1}
             #         theme_text_color: "Custom"
-            #         text_color: (utils.get_color_from_hex('#999999'))
+            #         text_color: utils.get_color_from_hex('#999999')
             Label:
                 text: ""
             Label:
@@ -321,8 +324,20 @@
                         rectangle: self.x, self.y, self.width, self.height
                 on_press: app.change_tx_direction(self, 1)
                 on_release: setattr(self, 'state', 'down')
-            Label:
-                text: ""
+            InfoIcon:
+                id: safety_helper_icon
+                icon: "shield-alert-outline"
+                theme_text_color: "Custom"
+                text_color: utils.get_color_from_hex('#f0b600')
+                halign: 'center'
+                valign: 'center'
+                font_size: 32
+                tooltip_text: "Entry price too close, position increase disabled"
+                tooltip_text_color: utils.get_color_from_hex('#f0b600')
+                tooltip_bg_color: utils.get_color_from_hex('#181A20')
+                canvas:
+                    Color:
+                        rgba: utils.get_color_from_hex('#181A20')
             ToggleButton:
                 id: short_btn
                 text: "Sell/Short"

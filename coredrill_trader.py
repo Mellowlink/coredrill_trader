@@ -12,6 +12,7 @@ from kivymd.uix.dialog import MDDialog
 from kivy.lang import Builder
 from kivy.config import Config
 from kivy.event import EventDispatcher
+from kivy.animation import Animation
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
@@ -37,6 +38,8 @@ class DashboardLayout(Widget):
 
     long_btn = ObjectProperty(None)
     short_btn = ObjectProperty(None)
+
+    safety_helper_icon = ObjectProperty(None)
 
     pending_tx_size = ObjectProperty(None)
     pending_tx_margin = ObjectProperty(None)
@@ -91,9 +94,6 @@ class EventLoopWorker(EventDispatcher):
             exchange.fapiPublic_get_ticker_price(params={'symbol': 'ETHUSDT'})
         )
         if positions:
-            print('\nPosition\n---\n')
-            for key in positions[0]:
-                print(f"{key}: {positions[0][key]}")
             position = {'size': float(positions[0]['positionAmt']),
                         'price': f"{float(positions[0]['entryPrice']):.2f}",
                         'liquidation_price': f"{float(positions[0]['liquidationPrice']):.2f}",
@@ -107,30 +107,24 @@ class EventLoopWorker(EventDispatcher):
                         'leverage': 10.0}
         for e in funding:
             if e['symbol'] == 'ETHUSDT':
-                print('\nFunding\n---\n')
-                for key in e:
-                    print(f"{key}: {e[key]}")
                 position['funding_time'] = float(e['fundingTime'])
                 position['predicted_funding_rate'] = float(e['fundingRate'])
                 break
         for e in account['assets']:
             if e['asset'] == 'USDT':
-                print('\nAsset\n---\n')
-                for key in e:
-                    print(f"{key}: {e[key]}")
                 position['margin_cost'] = f"{float(e['positionInitialMargin']):.2f}"
-                position['margin_ratio'] = f"{(float(e['maintMargin']) / float(e['marginBalance']))*100:.2f}%"
+                position['margin_ratio'] = (float(e['maintMargin']) / float(e['marginBalance']))*100
                 position['equity'] = float(e['marginBalance'])
                 position['wallet_balance'] = f"{float(e['walletBalance']):.2f} USDT"
                 position['available_balance'] = float(e['availableBalance'])
                 position['pos_pnl_pct'] = ((float(e['positionInitialMargin'])+float(position['pos_pnl']) - float(e['positionInitialMargin'])) / float(e['positionInitialMargin'])) * 100.0
                 break
-        print('\nSymbol\n---\n')
-        for s in symbol:
-            print(f"{s}: {symbol[s]}")
-        for key in position:
-            print(f"Key: {key}")
+
+        # for key in position:
+        #     print(f"{key}: {position[key]}")
         position['asset_price'] = symbol['price']
+        position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 1.5)*-1
+
         return position
 
     async def pulse(self):
@@ -209,7 +203,7 @@ class CoreDrill(MDApp):
         self.root.ids.long_btn.disabled = not state
         self.root.ids.short_btn.disabled = not state
         self.root.ids.clear_btn.disabled = not state
-        self.root.ids.execute_btn.disabled = not state
+        self.root.ids.execute_btn.disabled = True #only enabled when complete pending tx is ready
 
     def calculate_pending_tx(self):
         self.pending_tx['margin'] = float(self.position['available_balance']) * self.pending_tx['percent']
@@ -266,17 +260,16 @@ class CoreDrill(MDApp):
         self.prompt_creds.dismiss()
 
     def clear_pressed(self):
-        print('Clear pressed')
         self.reset_buttons()
 
     def execute_pressed(self):
-        print('Execute pressed')
         self.reset_buttons()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.event_loop_worker = None
         self.position = None
+        # self.safety_anim = None
         self.pending_tx = {"percent": 0, "size": 0, "margin": 0, "direction": 0}
 
     def build(self):
@@ -349,6 +342,19 @@ class CoreDrill(MDApp):
                 elif position["size"] < 0:
                     self.root.ids.long_btn.disabled = True
 
+                #TODO: make this safety mode check configurable
+                if position["pos_pnl_pct"] > position["safety_buffer_pct"]:
+                    self.toggle_interface(False)
+                    # if self.safety_anim is None:
+                    #     self.safety_anim = Animation(font_size = 36, duration = 0.4) + Animation(font_size = 32, duration = 0.1)
+                    #     self.safety_anim.repeat = True
+                    #     self.safety_anim.start(self.root.ids.safety_helper_icon)
+
+                else:
+                    self.toggle_interface(True)
+                    # self.safety_anim.stop(self.root.ids.safety_helper_icon)
+                    # self.safety_anim = None
+
                 self.root.ids.close_pos_btn.disabled = False
                 for key in pulse_listener_labels:
                     #TODO: think of a better way to check expected text color
@@ -366,6 +372,8 @@ class CoreDrill(MDApp):
                         pulse_listener_labels[key].text = f"{position[key]:.3f} ETH"
                     elif key == "pos_pnl":
                         pulse_listener_labels[key].text = f"{position[key]:.2f}({position['pos_pnl_pct']:.2f}%)"
+                    elif key == "margin_ratio":
+                        pulse_listener_labels[key].text = f"{position[key]:.2f}%"
                     elif key == "available_balance":
                         pulse_listener_labels[key].text = f"{float(position[key]):.2f} USDT"
                     elif key == "asset_price":
@@ -386,6 +394,11 @@ class CoreDrill(MDApp):
                 self.root.ids.short_btn.disabled = False
                 self.root.ids.long_btn.disabled = False
                 self.root.ids.close_pos_btn.disabled = True
+
+            if self.pending_tx['size'] != 0:
+                self.root.ids.execute_btn.disabled = False
+            else:
+                self.root.ids.execute_btn.disabled = True
 
         worker.bind(on_pulse=display_on_pulse)
         worker.start()
