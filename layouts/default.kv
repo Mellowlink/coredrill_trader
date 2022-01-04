@@ -521,5 +521,37 @@
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
                 on_release: root.close_position()
-
 </DashboardLayout>
+<PromptCreds>
+    prompt_creds_key:prompt_creds_key
+    prompt_creds_secret:prompt_creds_secret
+
+    orientation: "vertical"
+    spacing: "12dp"
+    size_hint_y: None
+    height: "120dp"
+
+    MDTextField:
+        id: prompt_creds_key
+        hint_text: "Key"
+        helper_text_mode: "on_error"
+        helper_text: "Something's wrong, doublecheck your entry"
+        max_text_length: 64
+        mode: "rectangle"
+        color_mode: 'custom'
+        line_color_focus: utils.get_color_from_hex('#ffffff')
+        error_color: utils.get_color_from_hex('#f6465d')
+
+
+    MDTextField:
+        id: prompt_creds_secret
+        hint_text: "Secret"
+        helper_text_mode: "on_error"
+        helper_text: "Something's wrong, doublecheck your entry"
+        max_text_length: 64
+        mode: "rectangle"
+        color_mode: 'custom'
+        line_color_focus: utils.get_color_from_hex('#ffffff')
+        error_color: utils.get_color_from_hex('#f6465d')
+
+</PromptCreds>

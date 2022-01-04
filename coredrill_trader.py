@@ -2,13 +2,17 @@ import os
 import kivy
 import ccxt.async_support as ccxt_async
 import asyncio
+import pickle
 import threading
 from kivy.clock import mainthread
 from kivy.utils import get_color_from_hex
 from kivymd.app import MDApp
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.dialog import MDDialog
 from kivy.lang import Builder
 from kivy.config import Config
 from kivy.event import EventDispatcher
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
 from kivy.core.window import Window
@@ -161,13 +165,20 @@ class EventLoopWorker(EventDispatcher):
 
     #END: In Progress
 
+class PromptCreds(BoxLayout):
+    prompt_creds_key = ObjectProperty(None)
+    prompt_creds_secret = ObjectProperty(None)
+
 class CoreDrill(MDApp):
+
+    #dialog box object to input API credentials
+    prompt_creds = None
 
     def init_ccxt(self):
         #TODO: global variable lol? i can probably think of a better way to persist this object between classes
         global exchange
-        exchange = getattr(ccxt_async, 'binance')({'apiKey': key,
-                                            'secret': secret,
+        exchange = getattr(ccxt_async, 'binance')({'apiKey': self.creds['key'],
+                                            'secret': self.creds['secret'],
                                             'options': {'defaultType': 'future'}})
         global last_price
         last_price = None
@@ -222,6 +233,38 @@ class CoreDrill(MDApp):
         else:
             setattr(instance, 'state', 'normal')
 
+    def load_credentials(self):
+        with open(f'{config_path}/core.drill', 'rb') as file:
+            self.creds = pickle.load(file)
+            print("Core Drill found.\nInitializing...")
+
+    def save_credentials(self, instance):
+        new_key = self.prompt_creds_layout.ids.prompt_creds_key
+        new_secret = self.prompt_creds_layout.ids.prompt_creds_secret
+
+        #TODO: Fix the strange UI bug where the error color
+        # only appears when refocusing the input field
+        if len(new_key.text) != 64:
+            new_key.error = True
+        else:
+            new_key.error = False
+        if len(new_secret.text) != 64:
+            new_secret.error = True
+        else:
+            new_secret.error = False
+        if new_key.error or new_secret.error:
+            return
+
+        key_data = {
+        "key": new_key.text,
+        "secret": new_secret.text
+        }
+        with open(f'{config_path}/core.drill', 'wb') as file:
+            pickle.dump(key_data, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+        self.load_credentials()
+        self.prompt_creds.dismiss()
+
     def clear_pressed(self):
         print('Clear pressed')
         self.reset_buttons()
@@ -239,12 +282,40 @@ class CoreDrill(MDApp):
     def build(self):
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Window.size = (1024, 600)
+        self.theme_cls.theme_style = "Dark"
+        self.title = "Core Drill Trader"
+        self.icon = "logo.png"
 
+        return DashboardLayout()
+
+    def on_start(self, **kwargs):
         if not os.path.exists(config_path):
             os.makedirs(config_path)
             print("Created configuration folder.")
+        if not os.path.isfile(f"{config_path}/core.drill"):
+            print("No Core Drill found, please insert key.")
+            if not self.prompt_creds:
+                self.prompt_creds_layout = PromptCreds()
+                self.prompt_creds = MDDialog(
+                    title = "[color=999999]Configure your Core Drill API key and secret:[/color]",
+                    type = "custom",
+                    md_bg_color = get_color_from_hex('#1E2026'),
+                    auto_dismiss = False,
+                    content_cls = self.prompt_creds_layout,
+                    buttons = [
+                        MDFlatButton(
+                            text = "SAVE",
+                            font_size = 16,
+                            theme_text_color = "Custom",
+                            text_color = get_color_from_hex('#ffffff'),
+                            on_release = self.save_credentials,
+                        ),
+                    ],
+                )
 
-        return DashboardLayout()
+            self.prompt_creds.open()
+        else:
+            self.load_credentials()
 
     def start_event_loop_thread(self):
         if self.event_loop_worker is not None:
