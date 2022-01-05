@@ -56,10 +56,6 @@ class DashboardLayout(Widget):
     pos_pnl = ObjectProperty(None)
     close_pos_btn = ObjectProperty(None)
 
-    def close_position(self):
-        print('Close position pressed')
-
-
 class EventLoopWorker(EventDispatcher):
     __events__ = ('on_pulse',)
 
@@ -298,6 +294,23 @@ class CoreDrill(MDApp):
     def execute_pressed(self):
         #TODO: Execute order here
         self.reset_buttons()
+
+    def close_position(self):
+        symbol = 'ETH/USDT'
+        type = 'market'
+        side = 'sell' if self.position['size'] > 0 else 'buy'
+        amount = self.position['size']
+        price = None
+        params = {'reduceOnly': 'true'}
+
+        try:
+            # closing_order = exchange.create_order(symbol, type, side, amount, price, params)
+            # print(closing_order)
+            print('confirm close pos')
+        except Exception as e:
+            print(type(e).__name__, str(e))
+
+        print('Close position pressed')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
