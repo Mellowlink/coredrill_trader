@@ -15,6 +15,7 @@
     amount_small:amount_small
     amount_medium:amount_medium
     amount_large:amount_large
+    amount_double:amount_double
 
     long_btn:long_btn
     short_btn:short_btn
@@ -217,8 +218,25 @@
                     size: self.size
 
             #TODO: Get rid of weird empty labels being used to balance the GridLayout
-            Label:
-                text: ""
+            ToggleButton:
+                id: amount_double
+                text: "x2"  if self.disabled == False else ""
+                group: "tx_amount"
+                font_size: 28 if self.state == 'down' else 16
+                color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
+                background_normal: ''
+                background_down: ''
+                background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
+                always_release: True
+                disabled: True
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
+                    Line:
+                        width: 0.5
+                        rectangle: self.x, self.y, self.width, self.height
+                on_press: app.change_tx_amount_double(self)
+                on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
             ToggleButton:
@@ -238,7 +256,7 @@
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: app.change_tx_amount(self, 0.05)
+                on_press: app.change_tx_amount_pct(self, 0.05)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
@@ -259,7 +277,7 @@
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: app.change_tx_amount(self, 0.10)
+                on_press: app.change_tx_amount_pct(self, 0.10)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
@@ -280,7 +298,7 @@
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: app.change_tx_amount(self, 0.15)
+                on_press: app.change_tx_amount_pct(self, 0.15)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
@@ -326,13 +344,13 @@
                 on_release: setattr(self, 'state', 'down')
             InfoIcon:
                 id: safety_helper_icon
-                icon: "shield-alert-outline"
+                icon: "shield-alert"
                 theme_text_color: "Custom"
-                text_color: utils.get_color_from_hex('#f0b600')
+                text_color: (0,0,0,0)
                 halign: 'center'
                 valign: 'center'
                 font_size: 32
-                tooltip_text: "Entry price too close, position increase disabled"
+                tooltip_text: ""
                 tooltip_text_color: utils.get_color_from_hex('#f0b600')
                 tooltip_bg_color: utils.get_color_from_hex('#181A20')
                 canvas:
@@ -557,7 +575,6 @@
         line_color_focus: utils.get_color_from_hex('#ffffff')
         error_color: utils.get_color_from_hex('#f6465d')
 
-
     MDTextField:
         id: prompt_creds_secret
         hint_text: "Secret"
@@ -568,5 +585,4 @@
         color_mode: 'custom'
         line_color_focus: utils.get_color_from_hex('#ffffff')
         error_color: utils.get_color_from_hex('#f6465d')
-
 </PromptCreds>

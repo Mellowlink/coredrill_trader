@@ -35,6 +35,7 @@ class DashboardLayout(Widget):
     amount_small = ObjectProperty(None)
     amount_medium = ObjectProperty(None)
     amount_large = ObjectProperty(None)
+    amount_double = ObjectProperty(None)
 
     long_btn = ObjectProperty(None)
     short_btn = ObjectProperty(None)
@@ -137,7 +138,7 @@ class EventLoopWorker(EventDispatcher):
             position = await self.fetch_position()
             dispatch_position(position)
 
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.5) #TODO: Make the polling frequency configurable
 
     def _restart_pulse(self):
         """Helper to start/reset the pulse task when the pulse changes."""
@@ -188,6 +189,7 @@ class CoreDrill(MDApp):
         self.root.ids.amount_small.state = "normal"
         self.root.ids.amount_medium.state = "normal"
         self.root.ids.amount_large.state = "normal"
+        self.root.ids.amount_double.state = "normal"
         self.root.ids.long_btn.state = "normal"
         self.root.ids.short_btn.state = "normal"
         self.root.ids.pending_tx_size.text = "-"
@@ -200,10 +202,30 @@ class CoreDrill(MDApp):
         self.root.ids.amount_small.disabled = not state
         self.root.ids.amount_medium.disabled = not state
         self.root.ids.amount_large.disabled = not state
+        self.root.ids.amount_double.disabled = True
         self.root.ids.long_btn.disabled = not state
         self.root.ids.short_btn.disabled = not state
         self.root.ids.clear_btn.disabled = not state
         self.root.ids.execute_btn.disabled = True #only enabled when complete pending tx is ready
+
+    def toggle_safety_icon(self, enabled, in_profit = None):
+        if enabled:
+            alert_reason = ""
+            color = None
+            if in_profit:
+                alert_reason = "Position in profit"
+                color = get_color_from_hex('#0ecb81')
+            else:
+                alert_reason = "Entry price too close"
+                color = get_color_from_hex('#f0b600')
+
+            tooltip_text = f"{alert_reason}, position increase disabled"
+            self.root.ids.safety_helper_icon.tooltip_text = tooltip_text
+            self.root.ids.safety_helper_icon.tooltip_text_color = color
+            self.root.ids.safety_helper_icon.text_color = color
+        else:
+            self.root.ids.safety_helper_icon.tooltip_text = ""
+            self.root.ids.safety_helper_icon.text_color = (0,0,0,0)
 
     def calculate_pending_tx(self):
         self.pending_tx['margin'] = float(self.position['available_balance']) * self.pending_tx['percent']
@@ -211,13 +233,24 @@ class CoreDrill(MDApp):
         self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
         self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
 
-    def change_tx_amount(self, instance, percent):
+    def change_tx_amount_pct(self, instance, percent):
         if self.position is not None:
             self.pending_tx['percent'] = percent
             if self.pending_tx['percent'] > 0 and self.pending_tx['direction'] != 0:
                 self.calculate_pending_tx()
-            else:
-                setattr(instance, 'state', 'normal')
+        else:
+            setattr(instance, 'state', 'normal')
+
+    #TODO: Refactor, there's 90% duplication with calculate_pending_tx() and change_tx_amount_pct()
+    def change_tx_amount_double(self, instance):
+        if self.position is not None:
+            self.pending_tx['margin'] = float(self.position['pos_margin'])
+            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 10.0, 3) #TODO: 10x leverage, change this to be pulled from config in the future
+
+            self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
+            self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
+        else:
+            setattr(instance, 'state', 'normal')
 
     def change_tx_direction(self, instance, multiplier):
         if self.position is not None:
@@ -263,6 +296,7 @@ class CoreDrill(MDApp):
         self.reset_buttons()
 
     def execute_pressed(self):
+        #TODO: Execute order here
         self.reset_buttons()
 
     def __init__(self, **kwargs):
@@ -345,13 +379,17 @@ class CoreDrill(MDApp):
                 #TODO: make this safety mode check configurable
                 if position["pos_pnl_pct"] > position["safety_buffer_pct"]:
                     self.toggle_interface(False)
+                    self.root.ids.amount_double.disabled = True
                     # if self.safety_anim is None:
                     #     self.safety_anim = Animation(font_size = 36, duration = 0.4) + Animation(font_size = 32, duration = 0.1)
                     #     self.safety_anim.repeat = True
                     #     self.safety_anim.start(self.root.ids.safety_helper_icon)
 
+                    self.toggle_safety_icon(True, position["pos_pnl_pct"] > 0)
                 else:
                     self.toggle_interface(True)
+                    self.toggle_safety_icon(False)
+                    self.root.ids.amount_double.disabled = False
                     # self.safety_anim.stop(self.root.ids.safety_helper_icon)
                     # self.safety_anim = None
 
@@ -394,11 +432,18 @@ class CoreDrill(MDApp):
                 self.root.ids.short_btn.disabled = False
                 self.root.ids.long_btn.disabled = False
                 self.root.ids.close_pos_btn.disabled = True
+                self.root.ids.amount_double.disabled = True
 
             if self.pending_tx['size'] != 0:
                 self.root.ids.execute_btn.disabled = False
             else:
                 self.root.ids.execute_btn.disabled = True
+
+            if position['available_balance'] >= self.pending_tx['margin']:
+                self.root.ids.pending_tx_margin.color = get_color_from_hex('#ffffff')
+            else:
+                self.root.ids.pending_tx_margin.color = get_color_from_hex('#f6465d')
+                # self.root.ids.execute_btn.disabled = True
 
         worker.bind(on_pulse=display_on_pulse)
         worker.start()
@@ -433,6 +478,7 @@ class CoreDrill(MDApp):
             self.clear_position_labels()
             self.root.ids.close_pos_btn.disabled = True
             self.toggle_interface(instance.active)
+            self.toggle_safety_icon(False)
 
 if __name__ == '__main__':
     Builder.load_file(layout_path)
