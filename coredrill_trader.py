@@ -8,6 +8,7 @@ from kivy.clock import mainthread
 from kivy.utils import get_color_from_hex
 from kivymd.app import MDApp
 from kivymd.uix.button import MDFlatButton
+from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivy.lang import Builder
 from kivy.config import Config
@@ -295,7 +296,11 @@ class CoreDrill(MDApp):
         #TODO: Execute order here
         self.reset_buttons()
 
-    def close_position(self):
+    def dismiss_close_prompt(self, instance):
+        self.prompt_close.dismiss()
+
+    def close_position(self, instance):
+        self.dismiss_close_prompt(instance)
         symbol = 'ETH/USDT'
         type = 'market'
         side = 'sell' if self.position['size'] > 0 else 'buy'
@@ -310,7 +315,28 @@ class CoreDrill(MDApp):
         except Exception as e:
             print(type(e).__name__, str(e))
 
-        print('Close position pressed')
+    def prompt_close_position(self):
+        self.prompt_close = MDDialog(
+            title="Close position?",
+            text="This will close your current position at the market price.",
+            buttons=[
+                MDFlatButton(
+                    text="CANCEL",
+                    theme_text_color="Custom",
+                    text_color=get_color_from_hex('#ffffff'),
+                    on_release=self.dismiss_close_prompt
+                ),
+                MDRaisedButton(
+                    text="CLOSE",
+                    font_size=16,
+                    theme_text_color="Custom",
+                    text_color=get_color_from_hex('#ffffff'),
+                    md_bg_color=get_color_from_hex('#0ecb81') if self.position['pos_pnl_pct'] > (self.position['leverage']/5) else get_color_from_hex('#f6465d'),
+                    on_release=self.close_position
+                ),
+            ],
+        )
+        self.prompt_close.open()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
