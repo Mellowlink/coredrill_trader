@@ -88,16 +88,20 @@ class EventLoopWorker(EventDispatcher):
         self.queued_order = order
 
     async def send_order(self, order):
-        params = {'symbol': self.queued_order['symbol'],
-            'leverage': 10.0} #TODO: make this configurable
-        await exchange.fapiPrivate_post_leverage(params=params)
+        try:
+            params = {'symbol': order['symbol'],
+                'leverage': 10} #TODO: make this configurable
+            await exchange.fapiPrivate_post_leverage(params=params)
 
-        params = {'symbol': self.queued_order['symbol'],
-            'type': self.queued_order['type'],
-            'side': self.queued_order['side'],
-            'quantity': self.queued_order['amount'],
-            'reduceOnly': self.queued_order['reduce_only']}
-        o = await exchange.fapiPrivate_post_order(params=params)
+            params = {'symbol': order['symbol'],
+                'type': order['type'],
+                'side': order['side'],
+                'quantity': order['amount'],
+                'reduceOnly': order['reduce_only']}
+            print(params)
+            o = await exchange.fapiPrivate_post_order(params=params)
+        except Exception as e:
+            print(type(e).__name__, str(e))
         self.queued_order = None
 
     #START: In Progress
@@ -157,7 +161,7 @@ class EventLoopWorker(EventDispatcher):
             position = await self.fetch_info()
             dispatch_position(position)
 
-            await asyncio.sleep(0.5) #TODO: Make the polling frequency configurable
+            await asyncio.sleep(0.25) #TODO: Make the polling frequency configurable
 
     def _restart_pulse(self):
         """Helper to start/reset the pulse task when the pulse changes."""
@@ -334,14 +338,13 @@ class CoreDrill(MDApp):
         self.event_loop_worker.queue_order(order)
 
     def execute_pressed(self):
-        self.reset_buttons()
         side = 'SELL' if self.pending_tx['size'] < 0 else 'BUY'
-
         try:
             self.submit_order(side, self.pending_tx['size'])
             print('Executing position...')
         except Exception as e:
             print(type(e).__name__, str(e))
+        self.reset_buttons()
 
     def close_position(self, instance):
         self.dismiss_close_prompt(instance)
@@ -492,6 +495,8 @@ class CoreDrill(MDApp):
                     pulse_listener_labels[key].text = f"{position[key]:.3f} ETH"
                 elif key == "pos_pnl":
                     pulse_listener_labels[key].text = f"{position[key]:.2f}({position['pos_pnl_pct']:.2f}%)"
+                elif key == "liquidation_price" and position[key] == "0.00":
+                    pulse_listener_labels[key].text = "-"
                 elif key == "margin_ratio":
                     pulse_listener_labels[key].text = f"{position[key]:.2f}%"
                 elif key == "available_balance":
@@ -517,6 +522,7 @@ class CoreDrill(MDApp):
                 self.root.ids.amount_large.disabled = False
                 self.root.ids.long_btn.disabled = False
                 self.root.ids.short_btn.disabled = False
+                self.root.ids.clear_btn.disabled = False
                 self.root.ids.close_pos_btn.disabled = True
                 self.root.ids.amount_double.disabled = True
 
