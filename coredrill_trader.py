@@ -163,6 +163,7 @@ class PromptCreds(BoxLayout):
 
 class CoreDrill(MDApp):
 
+    creds = None
     #dialog box object to input API credentials
     prompt_creds = None
 
@@ -338,6 +339,28 @@ class CoreDrill(MDApp):
         )
         self.prompt_close.open()
 
+    def prompt_initialize_credentials(self):
+        if not self.prompt_creds:
+            self.prompt_creds_layout = PromptCreds()
+            self.prompt_creds = MDDialog(
+                title = "[color=999999]Configure your Core Drill API key and secret:[/color]",
+                type = "custom",
+                md_bg_color = get_color_from_hex('#1E2026'),
+                auto_dismiss = False,
+                content_cls = self.prompt_creds_layout,
+                buttons = [
+                    MDFlatButton(
+                        text = "SAVE",
+                        font_size = 16,
+                        theme_text_color = "Custom",
+                        text_color = get_color_from_hex('#ffffff'),
+                        on_release = self.save_credentials,
+                    ),
+                ],
+            )
+
+        self.prompt_creds.open()
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.event_loop_worker = None
@@ -360,33 +383,14 @@ class CoreDrill(MDApp):
             print("Created configuration folder.")
         if not os.path.isfile(f"{config_path}/core.drill"):
             print("No Core Drill found, please insert key.")
-            if not self.prompt_creds:
-                self.prompt_creds_layout = PromptCreds()
-                self.prompt_creds = MDDialog(
-                    title = "[color=999999]Configure your Core Drill API key and secret:[/color]",
-                    type = "custom",
-                    md_bg_color = get_color_from_hex('#1E2026'),
-                    auto_dismiss = False,
-                    content_cls = self.prompt_creds_layout,
-                    buttons = [
-                        MDFlatButton(
-                            text = "SAVE",
-                            font_size = 16,
-                            theme_text_color = "Custom",
-                            text_color = get_color_from_hex('#ffffff'),
-                            on_release = self.save_credentials,
-                        ),
-                    ],
-                )
-
-            self.prompt_creds.open()
+            self.prompt_initialize_credentials()
         else:
             self.load_credentials()
 
     def start_event_loop_thread(self):
         if self.event_loop_worker is not None:
             return
-        print("Running the asyncio EventLoop now...\n\n\n\n")
+        print("Core Drill spinning up...\n\n\n\n")
         self.event_loop_worker = worker =  EventLoopWorker()
 
         pulse_listener_labels = {
@@ -488,13 +492,10 @@ class CoreDrill(MDApp):
         worker.start()
 
     def connect_exchange(self, instance):
-        #TODO: proper credential check and connection logic
-        has_credentials = True
-
-        if not has_credentials:
+        if self.creds is None:
             instance.active = False
-            print(f"Initialise credentials here: {instance.active}")
-        elif has_credentials and instance.active:
+            self.prompt_initialize_credentials()
+        elif self.creds is not None and instance.active:
             self.root.ids.connection_status.text = "Connecting..."
             try:
                 self.init_ccxt()
