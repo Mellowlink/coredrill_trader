@@ -59,6 +59,7 @@ class DashboardLayout(Widget):
 
 class EventLoopWorker(EventDispatcher):
     __events__ = ('on_pulse',)
+    queued_order = None
 
     def __init__(self):
         super().__init__()
@@ -83,8 +84,24 @@ class EventLoopWorker(EventDispatcher):
     def stop(self):
         self.loop.stop()
 
+    def queue_order(self, order):
+        self.queued_order = order
+
+    async def send_order(self, order):
+        params = {'symbol': self.queued_order['symbol'],
+            'leverage': 10.0} #TODO: make this configurable
+        await exchange.fapiPrivate_post_leverage(params=params)
+
+        params = {'symbol': self.queued_order['symbol'],
+            'type': self.queued_order['type'],
+            'side': self.queued_order['side'],
+            'quantity': self.queued_order['amount'],
+            'reduceOnly': self.queued_order['reduce_only']}
+        o = await exchange.fapiPrivate_post_order(params=params)
+        self.queued_order = None
+
     #START: In Progress
-    async def fetch_position(self) -> dict:
+    async def fetch_info(self) -> dict:
         positions, account, funding, symbol = await asyncio.gather(
             exchange.fapiPrivate_get_positionrisk(params={'symbol': 'ETHUSDT'}),
             exchange.fapiPrivate_get_account(),
@@ -115,13 +132,19 @@ class EventLoopWorker(EventDispatcher):
                 position['equity'] = float(e['marginBalance'])
                 position['wallet_balance'] = f"{float(e['walletBalance']):.2f} USDT"
                 position['available_balance'] = float(e['availableBalance'])
-                position['pos_pnl_pct'] = ((float(e['positionInitialMargin'])+float(position['pos_pnl']) - float(e['positionInitialMargin'])) / float(e['positionInitialMargin'])) * 100.0
+                if position['size'] != 0:
+                    position['pos_pnl_pct'] = ((float(e['positionInitialMargin'])+float(position['pos_pnl']) - float(e['positionInitialMargin'])) / float(e['positionInitialMargin'])) * 100.0
+                else:
+                    position['pos_pnl_pct'] = 0
                 break
 
         # for key in position:
         #     print(f"{key}: {position[key]}")
         position['asset_price'] = symbol['price']
         position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 1.5)*-1
+
+        if self.queued_order:
+            await self.send_order(self.queued_order)
 
         return position
 
@@ -131,8 +154,7 @@ class EventLoopWorker(EventDispatcher):
             @mainthread
             def dispatch_position(position):
                 self.dispatch('on_pulse', position)
-
-            position = await self.fetch_position()
+            position = await self.fetch_info()
             dispatch_position(position)
 
             await asyncio.sleep(0.5) #TODO: Make the polling frequency configurable
@@ -166,6 +188,8 @@ class CoreDrill(MDApp):
     creds = None
     #dialog box object to input API credentials
     prompt_creds = None
+
+    queued_order = None
 
     def init_ccxt(self):
         #TODO: global variable lol? i can probably think of a better way to persist this object between classes
@@ -230,6 +254,7 @@ class CoreDrill(MDApp):
         self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 10.0, 3) #TODO: 10x leverage, change this to be pulled from config in the future
         self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
         self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
+        self.root.ids.execute_btn.disabled = False
 
     def change_tx_amount_pct(self, instance, percent):
         if self.position is not None:
@@ -247,6 +272,7 @@ class CoreDrill(MDApp):
 
             self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
             self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
+            self.root.ids.execute_btn.disabled = False
         else:
             setattr(instance, 'state', 'normal')
 
@@ -293,26 +319,38 @@ class CoreDrill(MDApp):
     def clear_pressed(self):
         self.reset_buttons()
 
-    def execute_pressed(self):
-        #TODO: Execute order here
-        self.reset_buttons()
-
     def dismiss_close_prompt(self, instance):
         self.prompt_close.dismiss()
 
-    def close_position(self, instance):
-        self.dismiss_close_prompt(instance)
-        symbol = 'ETH/USDT'
-        type = 'market'
-        side = 'sell' if self.position['size'] > 0 else 'buy'
-        amount = self.position['size']
-        price = None
-        params = {'reduceOnly': 'true'}
+    def submit_order(self, direction, size, reduce_only = False):
+        order = {
+            'symbol': 'ETHUSDT',
+            'type': 'MARKET',
+            'side': direction,
+            'amount': abs(size),
+            'price': None,
+            'reduce_only': reduce_only
+        }
+        self.event_loop_worker.queue_order(order)
+
+    def execute_pressed(self):
+        self.reset_buttons()
+        side = 'SELL' if self.pending_tx['size'] < 0 else 'BUY'
 
         try:
-            # closing_order = exchange.create_order(symbol, type, side, amount, price, params)
-            # print(closing_order)
-            print('confirm close pos')
+            self.submit_order(side, self.pending_tx['size'])
+            print('Executing position...')
+        except Exception as e:
+            print(type(e).__name__, str(e))
+
+    def close_position(self, instance):
+        self.dismiss_close_prompt(instance)
+        self.reset_buttons()
+
+        side = 'SELL' if self.position['size'] > 0 else 'BUY'
+        try:
+            self.submit_order(side, self.position['size'], True)
+            print('Closing position...')
         except Exception as e:
             print(type(e).__name__, str(e))
 
@@ -405,6 +443,7 @@ class CoreDrill(MDApp):
             "margin_ratio": self.root.ids.margin_ratio
         }
 
+        #TODO: clean this up, will probably need some reorganization
         def display_on_pulse(instance, position):
             self.position = position
             if exchange is None:
@@ -413,13 +452,13 @@ class CoreDrill(MDApp):
             if position is None:
                 print('No position info detected.')
                 return
-            if position["size"] != 0:
-                if position["size"] > 0:
-                    self.root.ids.short_btn.disabled = True
-                elif position["size"] < 0:
-                    self.root.ids.long_btn.disabled = True
+            if position["size"] > 0:
+                self.root.ids.short_btn.disabled = True
+            elif position["size"] < 0:
+                self.root.ids.long_btn.disabled = True
 
-                #TODO: make this safety mode check configurable
+            #TODO: make this safety mode check configurable
+            if position["size"] != 0:
                 if position["pos_pnl_pct"] > position["safety_buffer_pct"]:
                     self.toggle_interface(False)
                     self.root.ids.amount_double.disabled = True
@@ -436,44 +475,48 @@ class CoreDrill(MDApp):
                     # self.safety_anim.stop(self.root.ids.safety_helper_icon)
                     # self.safety_anim = None
 
-                self.root.ids.close_pos_btn.disabled = False
-                for key in pulse_listener_labels:
-                    #TODO: think of a better way to check expected text color
-                    colored_text = ["size", "pos_pnl"]
-                    if key in colored_text:
-                        if position[key] > 0:
-                            pulse_listener_labels[key].color = get_color_from_hex('#0ecb81')
-                        elif position[key] < 0:
+            self.root.ids.close_pos_btn.disabled = False
+            for key in pulse_listener_labels:
+                #TODO: think of a better way to check expected text color
+                colored_text = ["size", "pos_pnl"]
+                if key in colored_text:
+                    if position[key] > 0:
+                        pulse_listener_labels[key].color = get_color_from_hex('#0ecb81')
+                    elif position[key] < 0:
+                        pulse_listener_labels[key].color = get_color_from_hex('#f6465d')
+                    else:
+                        pulse_listener_labels[key].color = get_color_from_hex('#ffffff')
+
+                #TODO: do something better than checking these string literals
+                if key == "size":
+                    pulse_listener_labels[key].text = f"{position[key]:.3f} ETH"
+                elif key == "pos_pnl":
+                    pulse_listener_labels[key].text = f"{position[key]:.2f}({position['pos_pnl_pct']:.2f}%)"
+                elif key == "margin_ratio":
+                    pulse_listener_labels[key].text = f"{position[key]:.2f}%"
+                elif key == "available_balance":
+                    pulse_listener_labels[key].text = f"{float(position[key]):.2f} USDT"
+                elif key == "asset_price":
+                    global last_price
+                    pulse_listener_labels[key].text = f"{float(position[key]):.2f}"
+                    if last_price is not None:
+                        if float(last_price) > float(position[key]):
                             pulse_listener_labels[key].color = get_color_from_hex('#f6465d')
+                        elif float(last_price) < float(position[key]):
+                            pulse_listener_labels[key].color = get_color_from_hex('#0ecb81')
                         else:
                             pulse_listener_labels[key].color = get_color_from_hex('#ffffff')
-
-                    #TODO: do something better than checking these string literals
-                    if key == "size":
-                        pulse_listener_labels[key].text = f"{position[key]:.3f} ETH"
-                    elif key == "pos_pnl":
-                        pulse_listener_labels[key].text = f"{position[key]:.2f}({position['pos_pnl_pct']:.2f}%)"
-                    elif key == "margin_ratio":
-                        pulse_listener_labels[key].text = f"{position[key]:.2f}%"
-                    elif key == "available_balance":
-                        pulse_listener_labels[key].text = f"{float(position[key]):.2f} USDT"
-                    elif key == "asset_price":
-                        global last_price
-                        pulse_listener_labels[key].text = f"{float(position[key]):.2f}"
-                        if last_price is not None:
-                            if float(last_price) > float(position[key]):
-                                pulse_listener_labels[key].color = get_color_from_hex('#f6465d')
-                            elif float(last_price) < float(position[key]):
-                                pulse_listener_labels[key].color = get_color_from_hex('#0ecb81')
-                            else:
-                                pulse_listener_labels[key].color = get_color_from_hex('#ffffff')
-                        last_price = position[key]
-                    else:
-                        pulse_listener_labels[key].text = str(position[key])
-            else:
+                    last_price = position[key]
+                else:
+                    pulse_listener_labels[key].text = str(position[key])
+            if position["size"] == 0:
                 self.clear_position_labels()
-                self.root.ids.short_btn.disabled = False
+                self.toggle_safety_icon(False)
+                self.root.ids.amount_small.disabled = False
+                self.root.ids.amount_medium.disabled = False
+                self.root.ids.amount_large.disabled = False
                 self.root.ids.long_btn.disabled = False
+                self.root.ids.short_btn.disabled = False
                 self.root.ids.close_pos_btn.disabled = True
                 self.root.ids.amount_double.disabled = True
 
