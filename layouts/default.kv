@@ -1,8 +1,9 @@
 #:import utils kivy.utils
+<InfoIcon@MDIcon+MDTooltip>
 <DashboardLayout>
   #TODO: Add borders around sections: #0B0E11
 
-
+    connection_status:connection_status
     connection_switch:connection_switch
 
     balance_full:balance_full
@@ -14,9 +15,12 @@
     amount_small:amount_small
     amount_medium:amount_medium
     amount_large:amount_large
+    amount_double:amount_double
 
     long_btn:long_btn
     short_btn:short_btn
+
+    safety_helper_icon:safety_helper_icon
 
     pending_tx_size:pending_tx_size
     pending_tx_margin:pending_tx_margin
@@ -66,7 +70,8 @@
             Label:
                 text: ""
             Label:
-                text: "Connected" if root.connection_switch.active == True else "Connect"
+                id: connection_status
+                text: "Connect"
                 text_size: self.size
                 halign: 'center'
                 valign: 'top'
@@ -75,15 +80,17 @@
             Label:
                 text: ""
             Label:
-                text: "Balance:"
+                text: "Balance:" if self.width > 100 else ""
                 text_size: self.size
-                halign: 'right'
-                font_size: 14
+                halign: 'right' if self.width > 100 else 'left'
+                font_size: 14 if self.width > 100 else 12
                 color: utils.get_color_from_hex('#999999')
             Label:
                 id: balance_full
                 text: "-"
-                font_size: 14
+                text_size: self.size
+                halign: 'right'
+                font_size: 14 if self.width > 100 else 12
             Label:
                 text: ""
             # FloatLayout:
@@ -91,7 +98,7 @@
             #         icon: "menu"
             #         pos_hint: {"center_x": 0.3, "center_y": 1}
             #         theme_text_color: "Custom"
-            #         text_color: (utils.get_color_from_hex('#999999'))
+            #         text_color: utils.get_color_from_hex('#999999')
             Label:
                 text: ""
             Label:
@@ -106,20 +113,22 @@
                     theme_thumb_down_color: 'Custom'
                     thumb_color: utils.get_color_from_hex('#999999')
                     thumb_color_down: utils.get_color_from_hex('#0ecb81')
-                    on_release: root.connect_exchange(self)
+                    on_active: app.connect_exchange(self)
                     always_release: False
             Label:
                 text: ""
             Label:
-                text: "Available:"
+                text: "Available:" if self.width > 100 else ""
                 text_size: self.size
-                halign: 'right'
-                font_size: 14
+                halign: 'right' if self.width > 100 else 'left'
+                font_size: 14 if self.width > 100 else 12
                 color: utils.get_color_from_hex('#999999')
             Label:
                 id: balance_available
                 text: "-"
-                font_size: 14
+                text_size: self.size
+                halign: 'right'
+                font_size: 14 if self.width > 100 else 12
                 color: utils.get_color_from_hex('#999999')
         GridLayout:
             cols: 2
@@ -164,7 +173,7 @@
                 valign: 'center'
                 font_size: 36
                 size_hint_x: 0.65
-                color: utils.get_color_from_hex('#0ecb81')
+                color: utils.get_color_from_hex('#ffffff')
                 canvas.before:
                     Color:
                         rgba: utils.get_color_from_hex('#181A20')
@@ -209,13 +218,9 @@
                     size: self.size
 
             #TODO: Get rid of weird empty labels being used to balance the GridLayout
-            Label:
-                text: ""
-            Label:
-                text: ""
             ToggleButton:
-                id: amount_small
-                text: "5%"
+                id: amount_double
+                text: "x2"  if self.disabled == False else ""
                 group: "tx_amount"
                 font_size: 28 if self.state == 'down' else 16
                 color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
@@ -223,19 +228,41 @@
                 background_down: ''
                 background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
                 always_release: True
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#f0b600')
+                        rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: root.change_tx_amount(self)
+                on_press: app.change_tx_amount_double(self)
+                on_release: setattr(self, 'state', 'down')
+            Label:
+                text: ""
+            ToggleButton:
+                id: amount_small
+                text: "3%"
+                group: "tx_amount"
+                font_size: 28 if self.state == 'down' else 16
+                color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
+                background_normal: ''
+                background_down: ''
+                background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
+                always_release: True
+                disabled: True
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
+                    Line:
+                        width: 0.5
+                        rectangle: self.x, self.y, self.width, self.height
+                on_press: app.change_tx_amount_pct(self, 0.03)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
             ToggleButton:
                 id: amount_medium
-                text: "10%"
+                text: "6%"
                 group: "tx_amount"
                 font_size: 28 if self.state == 'down' else 16
                 color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
@@ -243,19 +270,20 @@
                 background_down: ''
                 background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
                 always_release: True
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#f0b600')
+                        rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: root.change_tx_amount(self)
+                on_press: app.change_tx_amount_pct(self, 0.06)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
             ToggleButton:
                 id: amount_large
-                text: "15%"
+                text: "12%"
                 group: "tx_amount"
                 font_size: 28 if self.state == 'down' else 16
                 color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
@@ -263,13 +291,14 @@
                 background_down: ''
                 background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
                 always_release: True
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#f0b600')
+                        rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: root.change_tx_amount(self)
+                on_press: app.change_tx_amount_pct(self, 0.12)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
@@ -304,16 +333,29 @@
                 background_down: ''
                 background_color: utils.get_color_from_hex('#0ecb81') if self.state == 'down' else (0,0,0,0)
                 always_release: True
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#0ecb81')
+                        rgba: utils.get_color_from_hex('#0ecb81') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: root.change_tx_direction(self)
+                on_press: app.change_tx_direction(self, 1)
                 on_release: setattr(self, 'state', 'down')
-            Label:
-                text: ""
+            InfoIcon:
+                id: safety_helper_icon
+                icon: "shield-alert"
+                theme_text_color: "Custom"
+                text_color: (0,0,0,0)
+                halign: 'center'
+                valign: 'center'
+                font_size: 32
+                tooltip_text: ""
+                tooltip_text_color: utils.get_color_from_hex('#f0b600')
+                tooltip_bg_color: utils.get_color_from_hex('#181A20')
+                canvas:
+                    Color:
+                        rgba: utils.get_color_from_hex('#181A20')
             ToggleButton:
                 id: short_btn
                 text: "Sell/Short"
@@ -324,13 +366,14 @@
                 background_down: ''
                 background_color: utils.get_color_from_hex('#f6465d') if self.state == 'down' else (0,0,0,0)
                 always_release: True
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#f6465d')
+                        rgba: utils.get_color_from_hex('#f6465d') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: root.change_tx_direction(self)
+                on_press: app.change_tx_direction(self, -1)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
@@ -401,13 +444,14 @@
                 background_normal: ''
                 background_down: ''
                 background_color: utils.get_color_from_hex('#4E4E4E') if self.state == 'down' else (0,0,0,0)
+                disabled: True
                 canvas.before:
                     Color:
-                        rgba: utils.get_color_from_hex('#ffffff')
+                        rgba: utils.get_color_from_hex('#ffffff') if self.disabled == False else (0,0,0,0)
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_release: root.clear_pressed()
+                on_release: app.clear_pressed()
 
         GridLayout:
             cols: 7
@@ -432,7 +476,8 @@
                 id: execute_btn
                 text: "Execute"
                 font_size: 16
-                on_release: root.execute_pressed()
+                disabled: True
+                on_release: app.execute_pressed()
             Label:
                 text: ""
             Label:
@@ -477,29 +522,21 @@
             Label:
                 text: ""
                 font_size: 14
-
             Label:
                 id: pos_size
-                text: "-"
-                color: utils.get_color_from_hex('#0ecb81')
                 font_size: 14
             Label:
                 id: entry_price
-                text: "-"
                 font_size: 14
             Label:
                 id: liq_price
-                text: "-"
                 color: utils.get_color_from_hex('#f0b600')
                 font_size: 14
             Label:
                 id: pos_margin
-                text: "-"
                 font_size: 14
             Label:
                 id: pos_pnl
-                text: "-"
-                color: utils.get_color_from_hex('#d70c25')
                 font_size: 14
             Button:
                 id: close_pos_btn
@@ -516,6 +553,36 @@
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_release: root.close_position()
-
+                on_release: app.prompt_close_position()
 </DashboardLayout>
+<PromptCreds>
+    prompt_creds_key:prompt_creds_key
+    prompt_creds_secret:prompt_creds_secret
+
+    orientation: "vertical"
+    spacing: "12dp"
+    size_hint_y: None
+    height: "120dp"
+
+    MDTextField:
+        id: prompt_creds_key
+        hint_text: "Key"
+        helper_text_mode: "on_error"
+        helper_text: "Something's wrong, doublecheck your entry"
+        max_text_length: 64
+        mode: "rectangle"
+        color_mode: 'custom'
+        line_color_focus: utils.get_color_from_hex('#ffffff')
+        error_color: utils.get_color_from_hex('#f6465d')
+
+    MDTextField:
+        id: prompt_creds_secret
+        hint_text: "Secret"
+        helper_text_mode: "on_error"
+        helper_text: "Something's wrong, doublecheck your entry"
+        max_text_length: 64
+        mode: "rectangle"
+        color_mode: 'custom'
+        line_color_focus: utils.get_color_from_hex('#ffffff')
+        error_color: utils.get_color_from_hex('#f6465d')
+</PromptCreds>
