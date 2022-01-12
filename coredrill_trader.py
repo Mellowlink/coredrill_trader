@@ -233,6 +233,7 @@ class CoreDrill(MDApp):
         self.root.ids.short_btn.disabled = not state
         self.root.ids.clear_btn.disabled = not state
         self.root.ids.execute_btn.disabled = True #only enabled when complete pending tx is ready
+        self.interface_state = state
 
     def toggle_safety_icon(self, enabled, in_profit = None):
         if enabled:
@@ -271,7 +272,8 @@ class CoreDrill(MDApp):
     #TODO: Refactor, there's 90% duplication with calculate_pending_tx() and change_tx_amount_pct()
     def change_tx_amount_double(self, instance):
         if self.position is not None:
-            self.pending_tx['margin'] = float(self.position['pos_margin'])
+            self.pending_tx['margin'] = float(self.position['margin_cost'])
+            self.pending_tx['direction'] = 1 if self.position['size'] > 0 else -1
             self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 10.0, 3) #TODO: 10x leverage, change this to be pulled from config in the future
 
             self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
@@ -283,7 +285,7 @@ class CoreDrill(MDApp):
     def change_tx_direction(self, instance, multiplier):
         if self.position is not None:
             self.pending_tx['direction'] = multiplier
-            if self.pending_tx['percent'] > 0 and self.pending_tx['direction'] != 0:
+            if self.pending_tx['percent'] > 0 and self.pending_tx['direction'] != 0 and self.pending_tx['margin'] != float(self.position['margin_cost']):
                 self.calculate_pending_tx()
         else:
             setattr(instance, 'state', 'normal')
@@ -455,15 +457,11 @@ class CoreDrill(MDApp):
             if position is None:
                 print('No position info detected.')
                 return
-            if position["size"] > 0:
-                self.root.ids.short_btn.disabled = True
-            elif position["size"] < 0:
-                self.root.ids.long_btn.disabled = True
-
             #TODO: make this safety mode check configurable
             if position["size"] != 0:
                 if position["pos_pnl_pct"] > position["safety_buffer_pct"]:
-                    self.toggle_interface(False)
+                    if self.interface_state:
+                        self.toggle_interface(False)
                     self.root.ids.amount_double.disabled = True
                     # if self.safety_anim is None:
                     #     self.safety_anim = Animation(font_size = 36, duration = 0.4) + Animation(font_size = 32, duration = 0.1)
@@ -472,11 +470,16 @@ class CoreDrill(MDApp):
 
                     self.toggle_safety_icon(True, position["pos_pnl_pct"] > 0)
                 else:
-                    self.toggle_interface(True)
+                    if not self.interface_state:
+                        self.toggle_interface(True)
                     self.toggle_safety_icon(False)
                     self.root.ids.amount_double.disabled = False
                     # self.safety_anim.stop(self.root.ids.safety_helper_icon)
                     # self.safety_anim = None
+                if position["size"] > 0:
+                    self.root.ids.short_btn.disabled = True
+                elif position["size"] < 0:
+                    self.root.ids.long_btn.disabled = True
 
             self.root.ids.close_pos_btn.disabled = False
             for key in pulse_listener_labels:
