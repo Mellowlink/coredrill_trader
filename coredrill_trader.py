@@ -145,7 +145,7 @@ class EventLoopWorker(EventDispatcher):
         # for key in position:
         #     print(f"{key}: {position[key]}")
         position['asset_price'] = symbol['price']
-        position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 1.75)*-1
+        position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 1.5)*-1
 
         if self.queued_order:
             await self.send_order(self.queued_order)
@@ -459,6 +459,8 @@ class CoreDrill(MDApp):
                 return
             #TODO: make this safety mode check configurable
             if position["size"] != 0:
+                tooltip_text = f'Next entry allowed at: {position["safety_buffer_pct"]:.2f}%'
+                self.root.ids.margin_ratio.tooltip_text = tooltip_text
                 if position["pos_pnl_pct"] > position["safety_buffer_pct"]:
                     if self.interface_state:
                         self.toggle_interface(False)
@@ -528,6 +530,7 @@ class CoreDrill(MDApp):
                 self.root.ids.clear_btn.disabled = False
                 self.root.ids.close_pos_btn.disabled = True
                 self.root.ids.amount_double.disabled = True
+                self.root.ids.margin_ratio.tooltip_text = ''
 
             if self.pending_tx['size'] != 0:
                 self.root.ids.execute_btn.disabled = False
@@ -567,6 +570,7 @@ class CoreDrill(MDApp):
             self.root.ids.asset_price.text = "-"
             self.root.ids.asset_price.color = get_color_from_hex('#ffffff')
             self.root.ids.margin_ratio.text = "-"
+            self.root.ids.margin_ratio.tooltip_text = ""
             self.clear_position_labels()
             self.root.ids.close_pos_btn.disabled = True
             self.toggle_interface(instance.active)

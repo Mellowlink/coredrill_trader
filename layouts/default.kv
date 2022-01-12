@@ -1,5 +1,6 @@
 #:import utils kivy.utils
 <InfoIcon@MDIcon+MDTooltip>
+<InfoLabel@Label+MDTooltip>
 <DashboardLayout>
   #TODO: Add borders around sections: #0B0E11
 
@@ -180,7 +181,7 @@
                     Rectangle:
                         pos: self.pos
                         size: self.size
-            Label:
+            InfoLabel:
                 id: margin_ratio
                 text: "-"
                 text_size: self.size
@@ -189,6 +190,9 @@
                 font_size: 24
                 size_hint_x: 0.35
                 color: utils.get_color_from_hex('#0ecb81')
+                tooltip_text: ""
+                tooltip_text_color: utils.get_color_from_hex('#ffffff')
+                tooltip_bg_color: utils.get_color_from_hex('#181A20')
             Label:
                 text: ""
                 size_hint_x: 0.65
