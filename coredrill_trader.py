@@ -145,7 +145,7 @@ class EventLoopWorker(EventDispatcher):
         # for key in position:
         #     print(f"{key}: {position[key]}")
         position['asset_price'] = symbol['price']
-        position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 1.5)*-1
+        position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 1.75)*-1
 
         if self.queued_order:
             await self.send_order(self.queued_order)
@@ -233,7 +233,6 @@ class CoreDrill(MDApp):
         self.root.ids.short_btn.disabled = not state
         self.root.ids.clear_btn.disabled = not state
         self.root.ids.execute_btn.disabled = True #only enabled when complete pending tx is ready
-        self.interface_state = state
 
     def toggle_safety_icon(self, enabled, in_profit = None):
         if enabled:
@@ -285,7 +284,7 @@ class CoreDrill(MDApp):
     def change_tx_direction(self, instance, multiplier):
         if self.position is not None:
             self.pending_tx['direction'] = multiplier
-            if self.pending_tx['percent'] > 0 and self.pending_tx['direction'] != 0 and self.pending_tx['margin'] != float(self.position['margin_cost']):
+            if self.pending_tx['percent'] > 0 and self.pending_tx['direction'] != 0:
                 self.calculate_pending_tx()
         else:
             setattr(instance, 'state', 'normal')
@@ -462,7 +461,7 @@ class CoreDrill(MDApp):
                 tooltip_text = f'Next entry allowed at: {position["safety_buffer_pct"]:.2f}%'
                 self.root.ids.margin_ratio.tooltip_text = tooltip_text
                 if position["pos_pnl_pct"] > position["safety_buffer_pct"]:
-                    if self.interface_state:
+                    if not (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(False)
                     self.root.ids.amount_double.disabled = True
                     # if self.safety_anim is None:
@@ -472,7 +471,7 @@ class CoreDrill(MDApp):
 
                     self.toggle_safety_icon(True, position["pos_pnl_pct"] > 0)
                 else:
-                    if not self.interface_state:
+                    if (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(True)
                     self.toggle_safety_icon(False)
                     self.root.ids.amount_double.disabled = False
