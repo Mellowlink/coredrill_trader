@@ -245,7 +245,7 @@
                 text: ""
             ToggleButton:
                 id: amount_small
-                text: "2%"
+                text: "3%"
                 group: "tx_amount"
                 font_size: 28 if self.state == 'down' else 16
                 color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
@@ -260,13 +260,13 @@
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: app.change_tx_amount_pct(self, 0.02)
+                on_press: app.change_tx_amount_pct(self, 0.03)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
             ToggleButton:
                 id: amount_medium
-                text: "5%"
+                text: "6%"
                 group: "tx_amount"
                 font_size: 28 if self.state == 'down' else 16
                 color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
@@ -281,7 +281,7 @@
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: app.change_tx_amount_pct(self, 0.05)
+                on_press: app.change_tx_amount_pct(self, 0.06)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
