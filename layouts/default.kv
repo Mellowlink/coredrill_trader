@@ -504,44 +504,44 @@
                     size: self.size
             Label:
                 text: "Size"
-                font_size: 14
+                font_size: 14 if self.width > 100 else 12
                 color: utils.get_color_from_hex('#999999')
             Label:
                 text: "Entry Price"
-                font_size: 14
+                font_size: 14 if self.width > 100 else 12
                 color: utils.get_color_from_hex('#999999')
             Label:
                 text: "Liq. Price"
-                font_size: 14
+                font_size: 14 if self.width > 100 else 12
                 color: utils.get_color_from_hex('#999999')
             Label:
                 text: "Margin"
-                font_size: 14
+                font_size: 14 if self.width > 100 else 12
                 color: utils.get_color_from_hex('#999999')
             Label:
                 text: "PNL(ROE %)"
-                font_size: 14
+                font_size: 14 if self.width > 100 else 12
                 color: utils.get_color_from_hex('#999999')
             #TODO: Get rid of this empty label
             Label:
                 text: ""
-                font_size: 14
+                font_size: 14 if self.width > 100 else 12
             Label:
                 id: pos_size
-                font_size: 14
+                font_size: 14 if self.width > 100 else 12
             Label:
                 id: entry_price
-                font_size: 14
+                font_size: 14 if self.width > 100 else 12
             Label:
                 id: liq_price
                 color: utils.get_color_from_hex('#f0b600')
-                font_size: 14
+                font_size: 14 if self.width > 100 else 12
             Label:
                 id: pos_margin
-                font_size: 14
+                font_size: 14 if self.width > 100 else 12
             Label:
                 id: pos_pnl
-                font_size: 14
+                font_size: 14 if self.width > 100 else 12
             Button:
                 id: close_pos_btn
                 text: "Close" if self.disabled == False else ""
