@@ -145,7 +145,7 @@ class EventLoopWorker(EventDispatcher):
         # for key in position:
         #     print(f"{key}: {position[key]}")
         position['asset_price'] = symbol['price']
-        position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 2)*-1
+        position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 2.5)*-1
 
         if self.queued_order:
             await self.send_order(self.queued_order)
