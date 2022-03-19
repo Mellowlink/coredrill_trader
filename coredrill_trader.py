@@ -90,7 +90,7 @@ class EventLoopWorker(EventDispatcher):
     async def send_order(self, order):
         try:
             params = {'symbol': order['symbol'],
-                'leverage': 5} #TODO: make this configurable
+                'leverage': 25} #TODO: make this configurable
             await exchange.fapiPrivate_post_leverage(params=params)
 
             params = {'symbol': order['symbol'],
@@ -123,7 +123,7 @@ class EventLoopWorker(EventDispatcher):
                         'price': 0.0,
                         'liquidation_price': 0.0,
                         'pos_pnl': 0.0,
-                        'leverage': 5.0}
+                        'leverage': 25.0}
         for e in funding:
             if e['symbol'] == 'ETHUSDT':
                 position['funding_time'] = float(e['fundingTime'])
@@ -146,7 +146,8 @@ class EventLoopWorker(EventDispatcher):
         #     print(f"{key}: {position[key]}")
         position['asset_price'] = symbol['price']
         #position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 2.5)*-1
-        position['safety_buffer_pct'] = float(position['leverage']) * 0.2 * -1
+        #position['safety_buffer_pct'] = float(position['leverage']) * 0.2 * -1
+        position['safety_buffer_pct'] = float(position['leverage']) * 0.08 * -1
 
         if self.queued_order:
             await self.send_order(self.queued_order)
@@ -256,7 +257,7 @@ class CoreDrill(MDApp):
 
     def calculate_pending_tx(self):
         self.pending_tx['margin'] = float(self.position['available_balance']) * self.pending_tx['percent']
-        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 5.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 25.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
         self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
         self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
         self.root.ids.execute_btn.disabled = False
@@ -274,7 +275,7 @@ class CoreDrill(MDApp):
         if self.position is not None:
             self.pending_tx['margin'] = float(self.position['margin_cost'])
             self.pending_tx['direction'] = 1 if self.position['size'] > 0 else -1
-            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 5.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 25.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
 
             self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
             self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
@@ -350,6 +351,16 @@ class CoreDrill(MDApp):
 
     def close_position(self, instance):
         self.dismiss_close_prompt(instance)
+        self.reset_buttons()
+
+        side = 'SELL' if self.position['size'] > 0 else 'BUY'
+        try:
+            self.submit_order(side, self.position['size'], True)
+            print('Closing position...')
+        except Exception as e:
+            print(type(e).__name__, str(e))
+
+    def automatic_close_position(self):
         self.reset_buttons()
 
         side = 'SELL' if self.position['size'] > 0 else 'BUY'
@@ -472,12 +483,13 @@ class CoreDrill(MDApp):
 
                     self.toggle_safety_icon(True, position["pos_pnl_pct"] > 0)
                 else:
-                    if (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
-                        self.toggle_interface(True)
-                    self.toggle_safety_icon(False)
-                    self.root.ids.amount_double.disabled = False
-                    # self.safety_anim.stop(self.root.ids.safety_helper_icon)
-                    # self.safety_anim = None
+                    self.automatic_close_position()
+
+                    # if (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
+                    #     self.toggle_interface(True)
+                    # self.toggle_safety_icon(False)
+                    # self.root.ids.amount_double.disabled = False
+
                 if position["size"] > 0:
                     self.root.ids.short_btn.disabled = True
                 elif position["size"] < 0:
