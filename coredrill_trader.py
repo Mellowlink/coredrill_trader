@@ -149,6 +149,23 @@ class EventLoopWorker(EventDispatcher):
         #position['safety_buffer_pct'] = float(position['leverage']) * 0.2 * -1
         position['safety_buffer_pct'] = float(position['leverage']) * 0.08 * -1
 
+        #lol
+        position['auto_close_pct'] = []
+        position['auto_close_pct'].append(float(position['leverage']) * 0.08 * -1)
+        position['auto_close_pct'].append(float(position['leverage']) * 0.08)
+        position['auto_close_pct'].append(float(position['leverage']) * 0.2)
+        position['auto_close_pct'].append(float(position['leverage']) * 0.4)
+        position['auto_close_pct'].append(float(position['leverage']) * 0.6)
+        position['auto_close_pct'].append(float(position['leverage']) * 0.8)
+        position['auto_close_pct'].append(float(position['leverage']) * 1.0)
+        position['auto_close_pct'].append(float(position['leverage']) * 1.2)
+        position['auto_close_pct'].append(float(position['leverage']) * 1.4)
+        position['auto_close_pct'].append(float(position['leverage']) * 1.6)
+        position['auto_close_pct'].append(float(position['leverage']) * 1.8)
+        position['auto_close_pct'].append(float(position['leverage']) * 2.0)
+        position['auto_close_pct'].append(float(position['leverage']) * 2.2)
+
+
         if self.queued_order:
             await self.send_order(self.queued_order)
 
@@ -194,8 +211,9 @@ class CoreDrill(MDApp):
     creds = None
     #dialog box object to input API credentials
     prompt_creds = None
-
     queued_order = None
+
+    auto_close_pnl = None
 
     def init_ccxt(self):
         #TODO: global variable lol? i can probably think of a better way to persist this object between classes
@@ -362,7 +380,7 @@ class CoreDrill(MDApp):
 
     def automatic_close_position(self):
         self.reset_buttons()
-
+        self.auto_close_pnl = None
         side = 'SELL' if self.position['size'] > 0 else 'BUY'
         try:
             self.submit_order(side, self.position['size'], True)
@@ -470,9 +488,14 @@ class CoreDrill(MDApp):
                 return
             #TODO: make this safety mode check configurable
             if position["size"] != 0:
-                tooltip_text = f'Next entry allowed at: {position["safety_buffer_pct"]:.2f}%'
+                if self.auto_close_pnl is None:
+                    self.auto_close_pnl = position["auto_close_pct"][0]
+                    print(position["auto_close_pct"])
+
+                tooltip_text = f'Auto close at: {self.auto_close_pnl:.2f}%'
                 self.root.ids.margin_ratio.tooltip_text = tooltip_text
-                if position["pos_pnl_pct"] > position["safety_buffer_pct"]:
+
+                if position["pos_pnl_pct"] > self.auto_close_pnl:
                     if not (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(False)
                     self.root.ids.amount_double.disabled = True
@@ -482,6 +505,30 @@ class CoreDrill(MDApp):
                     #     self.safety_anim.start(self.root.ids.safety_helper_icon)
 
                     self.toggle_safety_icon(True, position["pos_pnl_pct"] > 0)
+
+                    #some hacky shit lmao
+                    if position["pos_pnl_pct"] > position["auto_close_pct"][2] and self.auto_close_pnl == position["auto_close_pct"][0]:
+                        self.auto_close_pnl = position["auto_close_pct"][1]
+                    if position["pos_pnl_pct"] > position["auto_close_pct"][3] and self.auto_close_pnl == position["auto_close_pct"][1]:
+                        self.auto_close_pnl = position["auto_close_pct"][2]
+                    if position["pos_pnl_pct"] > position["auto_close_pct"][4] and self.auto_close_pnl == position["auto_close_pct"][2]:
+                        self.auto_close_pnl = position["auto_close_pct"][3]
+                    if position["pos_pnl_pct"] > position["auto_close_pct"][5] and self.auto_close_pnl == position["auto_close_pct"][3]:
+                        self.auto_close_pnl = position["auto_close_pct"][4]
+                    if position["pos_pnl_pct"] > position["auto_close_pct"][6] and self.auto_close_pnl == position["auto_close_pct"][4]:
+                        self.auto_close_pnl = position["auto_close_pct"][5]
+                    if position["pos_pnl_pct"] > position["auto_close_pct"][7] and self.auto_close_pnl == position["auto_close_pct"][5]:
+                        self.auto_close_pnl = position["auto_close_pct"][6]
+                    if position["pos_pnl_pct"] > position["auto_close_pct"][8] and self.auto_close_pnl == position["auto_close_pct"][6]:
+                        self.auto_close_pnl = position["auto_close_pct"][7]
+                    if position["pos_pnl_pct"] > position["auto_close_pct"][9] and self.auto_close_pnl == position["auto_close_pct"][7]:
+                        self.auto_close_pnl = position["auto_close_pct"][8]
+                    if position["pos_pnl_pct"] > position["auto_close_pct"][10] and self.auto_close_pnl == position["auto_close_pct"][8]:
+                        self.auto_close_pnl = position["auto_close_pct"][9]
+                    if position["pos_pnl_pct"] > position["auto_close_pct"][11] and self.auto_close_pnl == position["auto_close_pct"][9]:
+                        self.auto_close_pnl = position["auto_close_pct"][10]
+                    if position["pos_pnl_pct"] > position["auto_close_pct"][12] and self.auto_close_pnl == position["auto_close_pct"][10]:
+                        self.auto_close_pnl = position["auto_close_pct"][11]
                 else:
                     self.automatic_close_position()
 
@@ -495,6 +542,8 @@ class CoreDrill(MDApp):
                 elif position["size"] < 0:
                     self.root.ids.long_btn.disabled = True
 
+            else:
+                self.auto_close_pnl = position["auto_close_pct"][0]
             self.root.ids.close_pos_btn.disabled = False
             for key in pulse_listener_labels:
                 #TODO: think of a better way to check expected text color
