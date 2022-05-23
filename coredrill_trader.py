@@ -145,7 +145,7 @@ class EventLoopWorker(EventDispatcher):
         # for key in position:
         #     print(f"{key}: {position[key]}")
         position['asset_price'] = symbol['price']
-        if float(position['margin_ratio']) > 0.5:
+        if float(position['margin_ratio']) > 0.6:
             position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 2)*-1
         else:
             position['safety_buffer_pct'] = float(position['leverage']) * 0.2 * -1
@@ -276,6 +276,10 @@ class CoreDrill(MDApp):
         if self.position is not None:
             self.pending_tx['margin'] = float(self.position['margin_cost'])
             self.pending_tx['direction'] = 1 if self.position['size'] > 0 else -1
+
+            if self.pending_tx['margin'] > self.position['available_balance']:
+                self.pending_tx['margin'] = self.position['available_balance'] * 0.95
+                
             self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 5.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
 
             self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
