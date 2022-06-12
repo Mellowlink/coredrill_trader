@@ -145,8 +145,12 @@ class EventLoopWorker(EventDispatcher):
         # for key in position:
         #     print(f"{key}: {position[key]}")
         position['asset_price'] = symbol['price']
-        if float(position['margin_ratio']) > 0.6:
+        if float(position['margin_ratio']) > 1.2:
+            position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 3)*-1
+        elif float(position['margin_ratio']) > 0.6:
             position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 2)*-1
+        elif float(position['margin_ratio']) > 0.3:
+            position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']))*-1
         else:
             position['safety_buffer_pct'] = float(position['leverage']) * 0.2 * -1
 
