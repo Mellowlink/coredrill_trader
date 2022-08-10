@@ -374,7 +374,7 @@ class CoreDrill(MDApp):
         side = 'SELL' if self.pending_tx['size'] < 0 else 'BUY'
         try:
             self.submit_order(side, self.pending_tx['size'])
-            print('Executing position...')
+            print('Auto double triggered...')
         except Exception as e:
             print(type(e).__name__, str(e))
         self.reset_buttons()
