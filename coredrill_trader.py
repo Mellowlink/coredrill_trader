@@ -358,6 +358,27 @@ class CoreDrill(MDApp):
             print(type(e).__name__, str(e))
         self.reset_buttons()
 
+    def auto_double(self):
+        self.pending_tx['margin'] = float(self.position['margin_cost'])
+        self.pending_tx['direction'] = 1 if self.position['size'] > 0 else -1
+
+        if self.pending_tx['margin'] > self.position['available_balance']:
+            self.pending_tx['margin'] = self.position['available_balance'] * 0.95
+
+        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 5.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+
+        self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
+        self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
+        self.root.ids.execute_btn.disabled = False
+
+        side = 'SELL' if self.pending_tx['size'] < 0 else 'BUY'
+        try:
+            self.submit_order(side, self.pending_tx['size'])
+            print('Executing position...')
+        except Exception as e:
+            print(type(e).__name__, str(e))
+        self.reset_buttons()
+
     def close_position(self, instance):
         self.dismiss_close_prompt(instance)
         self.reset_buttons()
@@ -472,6 +493,8 @@ class CoreDrill(MDApp):
                 tooltip_text = f'Next entry allowed at: {position["safety_buffer_pct"]:.2f}%'
                 self.root.ids.margin_ratio.tooltip_text = tooltip_text
                 if position["pos_pnl_pct"] > position["safety_buffer_pct"]:
+                    if position["pos_pnl_pct"] > position["safety_buffer_pct"] * 3:
+                        self.auto_double()
                     if not (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(False)
                     self.root.ids.amount_double.disabled = True
