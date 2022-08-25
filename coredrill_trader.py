@@ -592,6 +592,7 @@ class CoreDrill(MDApp):
                 self.init_ccxt()
                 self.toggle_interface(instance.active)
                 self.root.ids.connection_status.text = "Connected"
+                self.last_double_time = time.time()
                 self.start_event_loop_thread()
             except Exception as e:
                 print('Error connecting to exchange', e)
