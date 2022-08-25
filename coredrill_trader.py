@@ -503,7 +503,7 @@ class CoreDrill(MDApp):
 
                     self.toggle_safety_icon(True, position["pos_pnl_pct"] > 0)
                 else:
-                    if position["pos_pnl_pct"] < position["safety_buffer_pct"] * 3:
+                    if (position["pos_pnl_pct"] < position["safety_buffer_pct"] * 3) and self.event_loop_worker.queued_order is None:
                         self.auto_double()
                     if (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(True)
