@@ -4,6 +4,7 @@ import ccxt.async_support as ccxt_async
 import asyncio
 import pickle
 import threading
+import time
 from kivy.clock import mainthread
 from kivy.utils import get_color_from_hex
 from kivymd.app import MDApp
@@ -359,6 +360,7 @@ class CoreDrill(MDApp):
         self.reset_buttons()
 
     def auto_double(self):
+        self.last_double_time = time.time()
         self.pending_tx['margin'] = float(self.position['margin_cost'])
         self.pending_tx['direction'] = 1 if self.position['size'] > 0 else -1
 
@@ -504,7 +506,8 @@ class CoreDrill(MDApp):
                     self.toggle_safety_icon(True, position["pos_pnl_pct"] > 0)
                 else:
                     if (position["pos_pnl_pct"] < position["safety_buffer_pct"] * 3) and self.event_loop_worker.queued_order is None:
-                        self.auto_double()
+                        if time.time() - self.last_double_time >= 10: #if 10 secondss passed since last double time
+                            self.auto_double()
                     if (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(True)
                     self.toggle_safety_icon(False)
