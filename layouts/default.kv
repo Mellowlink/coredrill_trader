@@ -266,6 +266,27 @@
                 text: ""
             ToggleButton:
                 id: amount_medium
+                text: "2%"
+                group: "tx_amount"
+                font_size: 28 if self.state == 'down' else 16
+                color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
+                background_normal: ''
+                background_down: ''
+                background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
+                always_release: True
+                disabled: True
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
+                    Line:
+                        width: 0.5
+                        rectangle: self.x, self.y, self.width, self.height
+                on_press: app.change_tx_amount_pct(self, 0.02)
+                on_release: setattr(self, 'state', 'down')
+            Label:
+                text: ""
+            ToggleButton:
+                id: amount_large
                 text: "3%"
                 group: "tx_amount"
                 font_size: 28 if self.state == 'down' else 16
@@ -282,27 +303,6 @@
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
                 on_press: app.change_tx_amount_pct(self, 0.03)
-                on_release: setattr(self, 'state', 'down')
-            Label:
-                text: ""
-            ToggleButton:
-                id: amount_large
-                text: "6%"
-                group: "tx_amount"
-                font_size: 28 if self.state == 'down' else 16
-                color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
-                background_normal: ''
-                background_down: ''
-                background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
-                always_release: True
-                disabled: True
-                canvas.before:
-                    Color:
-                        rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
-                    Line:
-                        width: 0.5
-                        rectangle: self.x, self.y, self.width, self.height
-                on_press: app.change_tx_amount_pct(self, 0.06)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
