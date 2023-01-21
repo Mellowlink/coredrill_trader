@@ -447,11 +447,33 @@ class CoreDrill(MDApp):
     def build(self):
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Window.size = (1024, 600)
+        Window.bind(on_key_down=self._on_keyboard_down)
         self.theme_cls.theme_style = "Dark"
         self.title = "Core Drill Trader"
         self.icon = "logo.png"
 
         return DashboardLayout()
+
+    def _on_keyboard_down(self, instance, keyboard, keycode, text, modifiers):
+        if len(modifiers) > 0 and modifiers[0] == 'ctrl':
+            print("\nWindow size", Window.size)
+            print("\nWindow top", Window.top)
+            print("\nWindow left", Window.left)
+            print(keycode)
+            if keycode == 80: # left arrow
+                self.dock_window_left()
+            if keycode == 79: # right arrow
+                self.dock_window_right()
+
+    def dock_window_left(self):
+        Window.size = (1024, 600)
+        Window.top = 40
+        Window.left = 2800
+
+    def dock_window_right(self):
+        Window.size = (559, 600)
+        Window.top = 554
+        Window.left = 5200
 
     def on_start(self, **kwargs):
         if not os.path.exists(config_path):
