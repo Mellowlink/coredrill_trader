@@ -456,10 +456,10 @@ class CoreDrill(MDApp):
 
     def _on_keyboard_down(self, instance, keyboard, keycode, text, modifiers):
         if len(modifiers) > 0 and modifiers[0] == 'ctrl':
-            print("\nWindow size", Window.size)
-            print("\nWindow top", Window.top)
-            print("\nWindow left", Window.left)
-            print(keycode)
+            # print("\nWindow size", Window.size)
+            # print("\nWindow top", Window.top)
+            # print("\nWindow left", Window.left)
+            # print(keycode)
             if keycode == 80: # left arrow
                 self.dock_window_left()
             if keycode == 79: # right arrow
