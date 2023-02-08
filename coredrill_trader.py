@@ -468,7 +468,7 @@ class CoreDrill(MDApp):
     def dock_window_left(self):
         Window.size = (1024, 600)
         Window.top = 40
-        Window.left = 2800
+        Window.left = 0
 
     def dock_window_right(self):
         Window.size = (559, 600)
