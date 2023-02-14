@@ -91,7 +91,7 @@ class EventLoopWorker(EventDispatcher):
     async def send_order(self, order):
         try:
             params = {'symbol': order['symbol'],
-                'leverage': 5} #TODO: make this configurable
+                'leverage': 25} #TODO: make this configurable
             await exchange.fapiPrivate_post_leverage(params=params)
 
             params = {'symbol': order['symbol'],
@@ -124,7 +124,7 @@ class EventLoopWorker(EventDispatcher):
                         'price': 0.0,
                         'liquidation_price': 0.0,
                         'pos_pnl': 0.0,
-                        'leverage': 5.0}
+                        'leverage': 25.0}
         for e in funding:
             if e['symbol'] == 'ETHUSDT':
                 position['funding_time'] = float(e['fundingTime'])
@@ -146,14 +146,14 @@ class EventLoopWorker(EventDispatcher):
         # for key in position:
         #     print(f"{key}: {position[key]}")
         position['asset_price'] = symbol['price']
-        if float(position['margin_ratio']) >= 1.05:
-            position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 3)*-1
-        elif float(position['margin_ratio']) >= 0.55:
-            position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 2)*-1
-        elif float(position['margin_ratio']) >= 0.28:
-            position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']))*-1
-        else:
-            position['safety_buffer_pct'] = float(position['leverage']) * 0.2 * -1
+        # if float(position['margin_ratio']) >= 1.05:
+        #     position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 3)*-1
+        # elif float(position['margin_ratio']) >= 0.55:
+        #     position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 2)*-1
+        # elif float(position['margin_ratio']) >= 0.28:
+        #     position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']))*-1
+        # else:
+        position['safety_buffer_pct'] = float(position['leverage']) * 0.2 * -1
 
         if self.queued_order:
             await self.send_order(self.queued_order)
@@ -263,7 +263,7 @@ class CoreDrill(MDApp):
 
     def calculate_pending_tx(self):
         self.pending_tx['margin'] = float(self.position['available_balance']) * self.pending_tx['percent']
-        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 5.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 25.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
         self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
         self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
         self.root.ids.execute_btn.disabled = False
@@ -285,7 +285,7 @@ class CoreDrill(MDApp):
             if self.pending_tx['margin'] > self.position['available_balance']:
                 self.pending_tx['margin'] = self.position['available_balance'] * 0.95
 
-            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 5.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 25.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
 
             self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
             self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
@@ -367,7 +367,7 @@ class CoreDrill(MDApp):
         if self.pending_tx['margin'] > self.position['available_balance']:
             self.pending_tx['margin'] = self.position['available_balance'] * 0.95
 
-        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 5.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 25.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
 
         self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
         self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
@@ -527,9 +527,9 @@ class CoreDrill(MDApp):
 
                     self.toggle_safety_icon(True, position["pos_pnl_pct"] > 0)
                 else:
-                    if (position["pos_pnl_pct"] < position["safety_buffer_pct"] * 3) and self.event_loop_worker.queued_order is None:
-                        if time.time() - self.last_double_time >= 10 and self.position['available_balance'] > 0: #if 10 secondss passed since last double time
-                            self.auto_double()
+                    # if (position["pos_pnl_pct"] < position["safety_buffer_pct"] * 3) and self.event_loop_worker.queued_order is None:
+                    #     if time.time() - self.last_double_time >= 10 and self.position['available_balance'] > 0: #if 10 secondss passed since last double time
+                    #         self.auto_double()
                     if (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(True)
                     self.toggle_safety_icon(False)
