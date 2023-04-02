@@ -316,7 +316,7 @@
                 background_down: ''
                 background_color: utils.get_color_from_hex('#473601') if self.state == 'down' else (0,0,0,0)
                 always_release: True
-                disabled: False
+                disabled: True
                 canvas.before:
                     Color:
                         rgba: utils.get_color_from_hex('#f0b600') if self.disabled == False else (0,0,0,0)
