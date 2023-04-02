@@ -38,6 +38,7 @@ class DashboardLayout(Widget):
     amount_medium = ObjectProperty(None)
     amount_large = ObjectProperty(None)
     amount_double = ObjectProperty(None)
+    amount_flip = ObjectProperty(None)
 
     long_btn = ObjectProperty(None)
     short_btn = ObjectProperty(None)
@@ -224,6 +225,7 @@ class CoreDrill(MDApp):
         self.root.ids.amount_medium.state = "normal"
         self.root.ids.amount_large.state = "normal"
         self.root.ids.amount_double.state = "normal"
+        self.root.ids.amount_flip.state = "normal"
         self.root.ids.long_btn.state = "normal"
         self.root.ids.short_btn.state = "normal"
         self.root.ids.pending_tx_size.text = "-"
@@ -237,6 +239,7 @@ class CoreDrill(MDApp):
         self.root.ids.amount_medium.disabled = not state
         self.root.ids.amount_large.disabled = not state
         self.root.ids.amount_double.disabled = True
+        self.root.ids.amount_flip.disabled = True
         self.root.ids.long_btn.disabled = not state
         self.root.ids.short_btn.disabled = not state
         self.root.ids.clear_btn.disabled = not state
@@ -281,6 +284,22 @@ class CoreDrill(MDApp):
         if self.position is not None:
             self.pending_tx['margin'] = float(self.position['margin_cost'])
             self.pending_tx['direction'] = 1 if self.position['size'] > 0 else -1
+
+            if self.pending_tx['margin'] > self.position['available_balance']:
+                self.pending_tx['margin'] = self.position['available_balance'] * 0.95
+
+            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 25.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+
+            self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
+            self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
+            self.root.ids.execute_btn.disabled = False
+        else:
+            setattr(instance, 'state', 'normal')
+
+    def change_tx_amount_flip(self, instance):
+        if self.position is not None:
+            self.pending_tx['margin'] = float(self.position['margin_cost']) * 2
+            self.pending_tx['direction'] = 1 if self.position['size'] > -1 else 0
 
             if self.pending_tx['margin'] > self.position['available_balance']:
                 self.pending_tx['margin'] = self.position['available_balance'] * 0.95
@@ -520,6 +539,7 @@ class CoreDrill(MDApp):
                     if not (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(False)
                     self.root.ids.amount_double.disabled = True
+                    self.root.ids.amount_flip.disabled = True
                     # if self.safety_anim is None:
                     #     self.safety_anim = Animation(font_size = 36, duration = 0.4) + Animation(font_size = 32, duration = 0.1)
                     #     self.safety_anim.repeat = True
@@ -534,6 +554,7 @@ class CoreDrill(MDApp):
                         self.toggle_interface(True)
                     self.toggle_safety_icon(False)
                     self.root.ids.amount_double.disabled = False
+                    self.root.ids.amount_flip.disabled = False
                     # self.safety_anim.stop(self.root.ids.safety_helper_icon)
                     # self.safety_anim = None
                 if position["size"] > 0:
@@ -588,6 +609,7 @@ class CoreDrill(MDApp):
                 self.root.ids.clear_btn.disabled = False
                 self.root.ids.close_pos_btn.disabled = True
                 self.root.ids.amount_double.disabled = True
+                self.root.ids.amount_flip.disabled = True
                 self.root.ids.margin_ratio.tooltip_text = ''
 
             if self.pending_tx['size'] != 0:
