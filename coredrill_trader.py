@@ -299,7 +299,7 @@ class CoreDrill(MDApp):
     def change_tx_amount_flip(self, instance):
         if self.position is not None:
             self.pending_tx['margin'] = float(self.position['margin_cost']) * 2
-            self.pending_tx['direction'] = 1 if self.position['size'] > -1 else 0
+            self.pending_tx['direction'] = -1 if self.position['size'] > 0 else 1
 
             if self.pending_tx['margin'] > self.position['available_balance']:
                 self.pending_tx['margin'] = self.position['available_balance'] * 0.95
