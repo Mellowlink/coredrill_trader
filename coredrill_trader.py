@@ -540,6 +540,7 @@ class CoreDrill(MDApp):
                         self.toggle_interface(False)
                     self.root.ids.amount_double.disabled = True
                     self.root.ids.amount_flip.disabled = False
+                    self.root.ids.clear_btn.disabled = False
                     # if self.safety_anim is None:
                     #     self.safety_anim = Animation(font_size = 36, duration = 0.4) + Animation(font_size = 32, duration = 0.1)
                     #     self.safety_anim.repeat = True
@@ -653,6 +654,7 @@ class CoreDrill(MDApp):
             self.root.ids.margin_ratio.text = "-"
             self.root.ids.margin_ratio.tooltip_text = ""
             self.clear_position_labels()
+            self.root.ids.amount_flip.disabled = True
             self.root.ids.close_pos_btn.disabled = True
             self.toggle_interface(instance.active)
             self.toggle_safety_icon(False)
