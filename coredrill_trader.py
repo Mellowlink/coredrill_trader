@@ -535,7 +535,7 @@ class CoreDrill(MDApp):
             if position["size"] != 0:
                 tooltip_text = f'Next entry allowed at: {position["safety_buffer_pct"]:.2f}%'
                 self.root.ids.margin_ratio.tooltip_text = tooltip_text
-                if self.root.ids.amount_flip.state !== "down" and (position["pos_pnl_pct"] > position["safety_buffer_pct"]):
+                if self.root.ids.amount_flip.state != "down" and (position["pos_pnl_pct"] > position["safety_buffer_pct"]):
                     if not (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(False)
                     self.root.ids.amount_double.disabled = True
