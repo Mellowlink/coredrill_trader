@@ -239,7 +239,7 @@ class CoreDrill(MDApp):
         self.root.ids.amount_medium.disabled = not state
         self.root.ids.amount_large.disabled = not state
         self.root.ids.amount_double.disabled = True
-        self.root.ids.amount_flip.disabled = True
+        # self.root.ids.amount_flip.disabled = True
         self.root.ids.long_btn.disabled = not state
         self.root.ids.short_btn.disabled = not state
         self.root.ids.clear_btn.disabled = not state
@@ -305,6 +305,22 @@ class CoreDrill(MDApp):
                 self.pending_tx['margin'] = self.position['available_balance'] * 0.95
 
             self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 25.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+
+            self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
+            self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
+            self.root.ids.execute_btn.disabled = False
+        else:
+            setattr(instance, 'state', 'normal')
+
+    def change_tx_amount_flip(self, instance):
+        if self.position is not None:
+            self.pending_tx['margin'] = float(self.position['margin_cost']) * 2
+            self.pending_tx['direction'] = 1 if self.position['size'] > -1 else 0
+
+            if self.pending_tx['margin'] > self.position['available_balance']:
+                self.pending_tx['margin'] = self.position['available_balance'] * 0.95
+
+            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 5.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
 
             self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
             self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
@@ -535,11 +551,11 @@ class CoreDrill(MDApp):
             if position["size"] != 0:
                 tooltip_text = f'Next entry allowed at: {position["safety_buffer_pct"]:.2f}%'
                 self.root.ids.margin_ratio.tooltip_text = tooltip_text
-                if position["pos_pnl_pct"] > position["safety_buffer_pct"]:
+                if self.root.ids.amount_flip.state !== "down" and (position["pos_pnl_pct"] > position["safety_buffer_pct"]):
                     if not (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(False)
                     self.root.ids.amount_double.disabled = True
-                    self.root.ids.amount_flip.disabled = True
+                    # self.root.ids.amount_flip.disabled = True
                     # if self.safety_anim is None:
                     #     self.safety_anim = Animation(font_size = 36, duration = 0.4) + Animation(font_size = 32, duration = 0.1)
                     #     self.safety_anim.repeat = True
