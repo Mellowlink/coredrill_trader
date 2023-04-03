@@ -239,7 +239,7 @@ class CoreDrill(MDApp):
         self.root.ids.amount_medium.disabled = not state
         self.root.ids.amount_large.disabled = not state
         self.root.ids.amount_double.disabled = True
-        self.root.ids.amount_flip.disabled = True
+        # self.root.ids.amount_flip.disabled = True
         self.root.ids.long_btn.disabled = not state
         self.root.ids.short_btn.disabled = not state
         self.root.ids.clear_btn.disabled = not state
@@ -535,11 +535,11 @@ class CoreDrill(MDApp):
             if position["size"] != 0:
                 tooltip_text = f'Next entry allowed at: {position["safety_buffer_pct"]:.2f}%'
                 self.root.ids.margin_ratio.tooltip_text = tooltip_text
-                if position["pos_pnl_pct"] > position["safety_buffer_pct"]:
+                if self.root.ids.amount_flip.state !== "down" and (position["pos_pnl_pct"] > position["safety_buffer_pct"]):
                     if not (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(False)
                     self.root.ids.amount_double.disabled = True
-                    self.root.ids.amount_flip.disabled = True
+                    # self.root.ids.amount_flip.disabled = True
                     # if self.safety_anim is None:
                     #     self.safety_anim = Animation(font_size = 36, duration = 0.4) + Animation(font_size = 32, duration = 0.1)
                     #     self.safety_anim.repeat = True
