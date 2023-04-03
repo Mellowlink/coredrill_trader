@@ -312,22 +312,6 @@ class CoreDrill(MDApp):
         else:
             setattr(instance, 'state', 'normal')
 
-    def change_tx_amount_flip(self, instance):
-        if self.position is not None:
-            self.pending_tx['margin'] = float(self.position['margin_cost']) * 2
-            self.pending_tx['direction'] = 1 if self.position['size'] > -1 else 0
-
-            if self.pending_tx['margin'] > self.position['available_balance']:
-                self.pending_tx['margin'] = self.position['available_balance'] * 0.95
-
-            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 5.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
-
-            self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
-            self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
-            self.root.ids.execute_btn.disabled = False
-        else:
-            setattr(instance, 'state', 'normal')
-
     def change_tx_direction(self, instance, multiplier):
         if self.position is not None:
             self.pending_tx['direction'] = multiplier
