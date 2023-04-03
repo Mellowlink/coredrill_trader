@@ -283,7 +283,7 @@ class CoreDrill(MDApp):
     def change_tx_amount_double(self, instance):
         if self.position is not None:
             self.pending_tx['margin'] = float(self.position['margin_cost'])
-            self.pending_tx['direction'] = -1 if self.position['size'] > 0 else 1
+            self.pending_tx['direction'] = 1 if self.position['size'] > 0 else -1
 
             if self.pending_tx['margin'] > self.position['available_balance']:
                 self.pending_tx['margin'] = self.position['available_balance'] * 0.95
@@ -535,7 +535,7 @@ class CoreDrill(MDApp):
             if position["size"] != 0:
                 tooltip_text = f'Next entry allowed at: {position["safety_buffer_pct"]:.2f}%'
                 self.root.ids.margin_ratio.tooltip_text = tooltip_text
-                if (position["pos_pnl_pct"] > position["safety_buffer_pct"]):
+                if (position["pos_pnl_pct"] > position["safety_buffer_pct"]*.005):
                     if not (self.root.ids.long_btn.disabled and self.root.ids.short_btn.disabled): #TODO: Fix this hacky check
                         self.toggle_interface(False)
                     self.root.ids.amount_double.disabled = True
@@ -610,6 +610,7 @@ class CoreDrill(MDApp):
                 self.root.ids.clear_btn.disabled = False
                 self.root.ids.close_pos_btn.disabled = True
                 self.root.ids.amount_double.disabled = True
+                self.root.ids.amount_flip.disabled = True
                 self.root.ids.margin_ratio.tooltip_text = ''
 
             if self.pending_tx['size'] != 0:
