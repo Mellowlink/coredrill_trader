@@ -210,6 +210,9 @@ class CoreDrill(MDApp):
         exchange = getattr(ccxt_async, 'binance')({'apiKey': self.creds['key'],
                                             'secret': self.creds['secret'],
                                             'options': {'defaultType': 'future'}})
+                                            'options': {'defaultType': 'future'},
+                                            'version': 'v2'
+                                            })
         global last_price
         last_price = None
 
