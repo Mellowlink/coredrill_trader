@@ -108,57 +108,59 @@ class EventLoopWorker(EventDispatcher):
 
     #START: In Progress
     async def fetch_info(self) -> dict:
-        positions, account, funding, symbol = await asyncio.gather(
-            exchange.fapiPrivate_get_positionrisk(params={'symbol': 'ETHUSDT'}),
-            exchange.fapiPrivate_get_account(),
-            exchange.fapiPublic_get_fundingrate(),
-            exchange.fapiPublic_get_ticker_price(params={'symbol': 'ETHUSDT'})
-        )
-        if positions:
-            position = {'size': float(positions[0]['positionAmt']),
-                        'price': f"{float(positions[0]['entryPrice']):.2f}",
-                        'liquidation_price': f"{float(positions[0]['liquidationPrice']):.2f}",
-                        'pos_pnl': float(positions[0]['unRealizedProfit']),
-                        'leverage': float(positions[0]['leverage'])}
-        else:
-            position = {'size': 0.0,
-                        'price': 0.0,
-                        'liquidation_price': 0.0,
-                        'pos_pnl': 0.0,
-                        'leverage': 25.0}
-        for e in funding:
-            if e['symbol'] == 'ETHUSDT':
-                position['funding_time'] = float(e['fundingTime'])
-                position['predicted_funding_rate'] = float(e['fundingRate'])
-                break
-        for e in account['assets']:
-            if e['asset'] == 'USDT':
-                position['margin_cost'] = f"{float(e['positionInitialMargin']):.2f}"
-                position['margin_ratio'] = (float(e['maintMargin']) / float(e['marginBalance']))*100
-                position['equity'] = float(e['marginBalance'])
-                position['wallet_balance'] = f"{float(e['walletBalance']):.2f} USDT"
-                position['available_balance'] = float(e['availableBalance'])
-                if position['size'] != 0:
-                    position['pos_pnl_pct'] = ((float(e['positionInitialMargin'])+float(position['pos_pnl']) - float(e['positionInitialMargin'])) / float(e['positionInitialMargin'])) * 100.0
-                else:
-                    position['pos_pnl_pct'] = 0
-                break
+        try:
+            positions, account, funding, symbol = await asyncio.gather(
+                exchange.fapiPrivateV2GetPositionRisk(params={'symbol': 'ETHUSDT'}),
+                exchange.fapiPrivateV2GetAccount(),
+                exchange.fapiPublicGetFundingRate(),
+                exchange.fapiPublicGetTickerPrice(params={'symbol': 'ETHUSDT'})
+            )
+            if positions:
+                position = {'size': float(positions[0]['positionAmt']),
+                            'price': f"{float(positions[0]['entryPrice']):.2f}",
+                            'liquidation_price': f"{float(positions[0]['liquidationPrice']):.2f}",
+                            'pos_pnl': float(positions[0]['unRealizedProfit']),
+                            'leverage': float(positions[0]['leverage'])}
+            else:
+                position = {'size': 0.0,
+                            'price': 0.0,
+                            'liquidation_price': 0.0,
+                            'pos_pnl': 0.0,
+                            'leverage': 10.0}
+            for e in funding:
+                if e['symbol'] == 'ETHUSDT':
+                    position['funding_time'] = float(e['fundingTime'])
+                    position['predicted_funding_rate'] = float(e['fundingRate'])
+                    break
+            for e in account['assets']:
+                if e['asset'] == 'USDT':
+                    position['margin_cost'] = f"{float(e['positionInitialMargin']):.2f}"
+                    position['margin_ratio'] = (float(e['maintMargin']) / float(e['marginBalance']))*100
+                    position['equity'] = float(e['marginBalance'])
+                    position['wallet_balance'] = f"{float(e['walletBalance']):.2f} USDT"
+                    position['available_balance'] = float(e['availableBalance'])
+                    if position['size'] != 0:
+                        position['pos_pnl_pct'] = ((float(e['positionInitialMargin'])+float(position['pos_pnl']) - float(e['positionInitialMargin'])) / float(e['positionInitialMargin'])) * 100.0
+                    else:
+                        position['pos_pnl_pct'] = 0
+                    break
 
-        # for key in position:
-        #     print(f"{key}: {position[key]}")
-        position['asset_price'] = symbol['price']
-        # if float(position['margin_ratio']) >= 1.05:
-        #     position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 3)*-1
-        # elif float(position['margin_ratio']) >= 0.55:
-        #     position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 2)*-1
-        # elif float(position['margin_ratio']) >= 0.28:
-        #     position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']))*-1
-        # else:
-        position['safety_buffer_pct'] = float(position['leverage']) * 0.2 * -1
+            # for key in position:
+            #     print(f"{key}: {position[key]}")
+            position['asset_price'] = symbol['price']
+            # if float(position['margin_ratio']) >= 1.05:
+            #     position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 3)*-1
+            # elif float(position['margin_ratio']) >= 0.55:
+            #     position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']) * 2)*-1
+            # elif float(position['margin_ratio']) >= 0.28:
+            #     position['safety_buffer_pct'] = float(position['margin_ratio']) * (float(position['leverage']))*-1
+            # else:
+            position['safety_buffer_pct'] = float(position['leverage']) * 0.2 * -1
 
-        if self.queued_order:
-            await self.send_order(self.queued_order)
-
+            if self.queued_order:
+                await self.send_order(self.queued_order)
+        except Exception as e:
+            print(type(e).__name__, str(e))
         return position
 
     async def pulse(self):
@@ -209,10 +211,8 @@ class CoreDrill(MDApp):
         global exchange
         exchange = getattr(ccxt_async, 'binance')({'apiKey': self.creds['key'],
                                             'secret': self.creds['secret'],
-                                            'options': {'defaultType': 'future'}})
                                             'options': {'defaultType': 'future'},
-                                            'version': 'v2'
-                                            })
+                                            'version': 'v2'})
         global last_price
         last_price = None
 
