@@ -92,8 +92,8 @@ class EventLoopWorker(EventDispatcher):
     async def send_order(self, order):
         try:
             params = {'symbol': order['symbol'],
-                'leverage': 25} #TODO: make this configurable
-            await exchange.fapiPrivate_post_leverage(params=params)
+                'leverage': 10} #TODO: make this configurable
+            await exchange.fapiPrivatePostLeverage(params=params)
 
             params = {'symbol': order['symbol'],
                 'type': order['type'],
@@ -101,7 +101,7 @@ class EventLoopWorker(EventDispatcher):
                 'quantity': order['amount'],
                 'reduceOnly': order['reduce_only']}
             print(params)
-            o = await exchange.fapiPrivate_post_order(params=params)
+            o = await exchange.fapiPrivatePostOrder(params=params)
         except Exception as e:
             print(type(e).__name__, str(e))
         self.queued_order = None
@@ -269,7 +269,7 @@ class CoreDrill(MDApp):
 
     def calculate_pending_tx(self):
         self.pending_tx['margin'] = float(self.position['available_balance']) * self.pending_tx['percent']
-        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 25.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 10.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
         self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
         self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
         self.root.ids.execute_btn.disabled = False
@@ -291,7 +291,7 @@ class CoreDrill(MDApp):
             if self.pending_tx['margin'] > self.position['available_balance']:
                 self.pending_tx['margin'] = self.position['available_balance'] * 0.95
 
-            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 25.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 10.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
 
             self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
             self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
@@ -304,10 +304,10 @@ class CoreDrill(MDApp):
             self.pending_tx['margin'] = float(self.position['margin_cost']) * 2
             self.pending_tx['direction'] = -1 if self.position['size'] > 0 else 1
 
-            if self.pending_tx['margin'] > self.position['available_balance']:
-                self.pending_tx['margin'] = self.position['available_balance'] * 0.95
+            # if self.pending_tx['margin'] > self.position['available_balance']:
+            #     self.pending_tx['margin'] = self.position['available_balance'] * 0.95
 
-            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 25.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+            self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 10.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
 
             self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
             self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
@@ -389,7 +389,7 @@ class CoreDrill(MDApp):
         if self.pending_tx['margin'] > self.position['available_balance']:
             self.pending_tx['margin'] = self.position['available_balance'] * 0.95
 
-        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 25.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
+        self.pending_tx['size'] = round(self.pending_tx['margin'] / float(self.position['asset_price']) * self.pending_tx['direction'] * 10.0, 3) #TODO: 5x leverage, change this to be pulled from config in the future
 
         self.root.ids.pending_tx_size.text = f"{self.pending_tx['size']:.3f} ETH"
         self.root.ids.pending_tx_margin.text = f"{self.pending_tx['margin']:.2f} USDT"
