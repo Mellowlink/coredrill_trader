@@ -245,7 +245,7 @@
                 text: ""
             ToggleButton:
                 id: amount_small
-                text: "11%"
+                text: "6%"
                 group: "tx_amount"
                 font_size: 28 if self.state == 'down' else 16
                 color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
@@ -260,13 +260,13 @@
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: app.change_tx_amount_pct(self, 0.11)
+                on_press: app.change_tx_amount_pct(self, 0.06)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
             ToggleButton:
                 id: amount_medium
-                text: "21%"
+                text: "18%"
                 group: "tx_amount"
                 font_size: 28 if self.state == 'down' else 16
                 color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
@@ -281,13 +281,13 @@
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: app.change_tx_amount_pct(self, 0.21)
+                on_press: app.change_tx_amount_pct(self, 0.18)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
             ToggleButton:
                 id: amount_large
-                text: "38%"
+                text: "36%"
                 group: "tx_amount"
                 font_size: 28 if self.state == 'down' else 16
                 color: (1,1,1,1) if self.state == 'down' else utils.get_color_from_hex('#f0b600')
@@ -302,7 +302,7 @@
                     Line:
                         width: 0.5
                         rectangle: self.x, self.y, self.width, self.height
-                on_press: app.change_tx_amount_pct(self, 0.38)
+                on_press: app.change_tx_amount_pct(self, 0.36)
                 on_release: setattr(self, 'state', 'down')
             Label:
                 text: ""
